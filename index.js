@@ -47,7 +47,7 @@ const app = express();
 
 const app_conf = config.get('App');
 
-const connnection_string = util.format('mongodb://%s:%s@%s:%s/%s',app_conf.db.user, app_conf.db.pass, app_conf.db.host, app_conf.db.port, app_conf.db.name);
+const connnection_string = util.format('mongodb+srv://cashbook:5s17DyXYI6A20i83@dbaas-db-6015241-a8489cc3.mongo.ondigitalocean.com/cashbook?tls=true&authSource=admin&replicaSet=dbaas-db-6015241');
 
 mongoose.set('useFindAndModify', false);
 mongoose.connect(connnection_string, { useNewUrlParser: true, useUnifiedTopology: true});
