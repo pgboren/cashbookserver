@@ -1,0 +1,13 @@
+{
+  "App": {
+    "host": "127.0.0.1",
+    "port":8080,
+    "db": {
+      "host": "127.0.0.1",
+      "port":27017,
+      "user":"boren",
+      "pass":"boren",
+      "name":"cashbook"
+    }
+  }
+}
