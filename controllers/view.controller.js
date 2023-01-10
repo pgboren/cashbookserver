@@ -284,15 +284,14 @@ function createInstituteDocSnapshot(entity, model) {
         institute.childrent.status = {label: "status", value: "អសកម្ម", dataType: "BOOLEAN",type:"DATA"}
     }
 
-
     var address = {label:"address", type: "GROUP", dataType: "GROUP"};    
     address.childrent = {};
 
     
     address.childrent.houseNo = {label: "houseNo", value:model.address.houseNo, dataType: "STRING",type:"DATA"};
-    address.childrent.floor = {label: "floor", value:model.address.floor, dataType: "STRING",type:"DATA"};
-    address.childrent.roomNumber = {label: "roomNumber", value:model.address.roomNumber, dataType: "STRING",type:"DATA"};
-    address.childrent.postalCode = {label: "postalCode", value:model.address.postalCode, dataType: "STRING",type:"DATA"};
+    address.childrent.floor = {label: "floor", value:model.address.floor, dataType: "STRING",type:"DATA", visible: 4};
+    address.childrent.roomNumber = {label: "roomNumber", value:model.address.roomNumber, dataType: "STRING",type:"DATA", visible: 4};
+    address.childrent.postalCode = {label: "postalCode", value:model.address.postalCode, dataType: "STRING",type:"DATA", visible: 4};
     address.childrent.street = {label: "street", value:model.address.street, dataType: "STRING",type:"DATA"};
     address.childrent.village = {label: "village", value:model.address.village, dataType: "STRING",type:"DATA"};
     address.childrent.commune = {label: "commune", value:model.address.commune, dataType: "STRING",type:"DATA"};
@@ -303,7 +302,6 @@ function createInstituteDocSnapshot(entity, model) {
     doc.title = model.name;
     doc.data[entity] = institute;
     return doc;
-
 }
 
 function createCategoryDocumentSnapshot(entity, model) {
