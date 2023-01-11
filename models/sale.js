@@ -1,7 +1,7 @@
   var mongoose = require('mongoose');
-Counter = require('../models/counter');
+Counter = require('./counter');
 
-var dealSchema = mongoose.Schema({
+var saleSchema = mongoose.Schema({
     number:  { type: String , required: false },
     branch: {type: mongoose.Schema.Types.ObjectId, ref: 'branch'},
     customer: {type: mongoose.Schema.Types.ObjectId, ref: 'contact'},
@@ -16,3 +16,4 @@ var dealSchema = mongoose.Schema({
     status:  { type: String , required: true }
 });
 
+module.exports = mongoose.model('sale', saleSchema);

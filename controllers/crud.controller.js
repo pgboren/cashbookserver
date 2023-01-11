@@ -4,7 +4,7 @@ institute = require('../models/institute');
 Address = require('../models/address');
 Address = require('../models/item');
 Color = require('../models/color');
-Deal = require('../models/deal');
+Sale = require('../models/sale');
 
 
 Moment = require('moment');

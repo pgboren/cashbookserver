@@ -3,6 +3,7 @@ Contact = require('../models/contact');
 Branch = require('../models/branch');
 Color = require('../models/color');
 Item = require('../models/item');
+Sale = require('../models/sale');
 CoponCode = require('../models/coponcode');
 LoanInstitution = require('../models/institute');
 Moment = require('moment');
@@ -34,7 +35,7 @@ function populateQuery(entity, query) {
         query.populate('category');
     }
 
-    if (entity == 'deal') { 
+    if (entity == 'sale') { 
         query.populate('branch');
         query.populate({path:'customer', populate: { path:  'photo', model: 'media' }});
         query.populate({path:'item', populate: { path:  'photo', model: 'media' }});
@@ -165,8 +166,8 @@ function createDocumentSnapshot(entity, model) {
         doc = createContactDocumentSnapshot(entity, model);      
     }
 
-    if (entity == 'deal') { 
-        doc = createDealDocumentSnapshot(entity, model);      
+    if (entity == 'sale') { 
+        doc = createSaleDocumentSnapshot(entity, model);      
     }
     
     return doc;
@@ -272,7 +273,7 @@ function createInstituteDocSnapshot(entity, model) {
         institute.childrent.photo = {label: "logo", value:model.photo.path, dataType: "PHOTO",type:"DATA", action: "PHOTO_UPLOAD"};
     }
     else {
-        institute.childrent.photo = {label: "logo", value:null, dataType: "DOCUMENT",type:"DATA", action: "PHOTO_UPLOAD"};
+        institute.childrent.photo = {label: "logo", value:null, dataType: "PHOTO",type:"DATA", action: "PHOTO_UPLOAD"};
     }    
 
 
@@ -357,6 +358,10 @@ function createContactDocumentSnapshot(entity, model) {
     contactNumber.childrent.telegram = {label: "telegram", value: model.telegram, dataType: "TELEGRAM",type:"DATA"};
 
     var address = {label:"address", type: "GROUP", dataType: "GROUP", childrent: {}};
+    address.childrent.houseno = {label: "houseno", value:model.address.houseNo, dataType: "STRING",type:"DATA"};
+    address.childrent.floor = {label: "floor", value:model.address.floor, dataType: "STRING",type:"DATA"};
+    address.childrent.roomnumber = {label: "roomnumber", value:model.address.roomNumber, dataType: "STRING",type:"DATA"};
+
     address.childrent.village = {label: "village", value:model.address.village, dataType: "STRING",type:"DATA"};
     address.childrent.commune = {label: "commune", value:model.address.commune, dataType: "STRING",type:"DATA"};
     address.childrent.district = {label: "district", value:model.address.district, dataType: "STRING",type:"DATA"};
@@ -372,7 +377,7 @@ function createContactDocumentSnapshot(entity, model) {
     return doc;
 }
 
-function createDealDocumentSnapshot(entity, model) {
+function createSaleDocumentSnapshot(entity, model) {
     var doc = {};
     doc._id = model._id;    
     doc.className = entity;
