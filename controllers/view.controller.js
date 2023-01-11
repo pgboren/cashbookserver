@@ -342,7 +342,7 @@ function createContactDocumentSnapshot(entity, model) {
         general.childrent.photo = {label: "photo", value:model.photo.path, dataType: "PHOTO",type:"DATA", action: "PHOTO_UPLOAD"};
     }
     else {
-        general.childrent.photo = {label: "photo", value:null, dataType: "DOCUMENT",type:"DATA", action: "PHOTO_UPLOAD"};
+        general.childrent.photo = {label: "photo", value:null, dataType: "PHOTO",type:"DATA", action: "PHOTO_UPLOAD"};
     }
 
     general.childrent.firstname = {label: "first_name", value:model.firstname, dataType: "STRING",type:"DATA"};
