@@ -3,9 +3,11 @@
 var stageSchema = mongoose.Schema({
     name: { type: String , required: true },
     color: { type: String , required: true },
-    board: {type: mongoose.Schema.Types.ObjectId, ref: 'board'},
-    tasks : [{ type: mongoose.Schema.Types.ObjectId, ref: 'task' }]    
+    icon: { type: String , required: false },
+    order: { type:Number, require:true},
+    
+    board: {type: mongoose.Schema.Types.ObjectId, ref: 'agileboard'}
 });
 
-module.exports = mongoose.model('stage', stageSchema);
+module.exports = mongoose.model('agilestage', stageSchema);
 

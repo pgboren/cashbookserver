@@ -49,8 +49,7 @@ var itemSchema = mongoose.Schema({
     },
     branch: { 
         type: mongoose.Schema.Types.ObjectId, 
-        ref: 'branch', 
-        require: true},
+        ref: 'branch'},
     category: { 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'category', 

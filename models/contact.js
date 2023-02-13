@@ -3,8 +3,8 @@ addressSchema = require('../models/address');
 
 // // Setup schema
 var contactSchema = mongoose.Schema({
-    firstname: { type: String, required: true },
-    lastname: { type: String, required: true },
+    name: { type: String, required: true },
+    latinname: { type: String, required: false },
     gender: { type: String, required: true },
     nickname: {
         type: String,
@@ -21,7 +21,7 @@ var contactSchema = mongoose.Schema({
         require: false
     },
     address: addressSchema
-});
+}, { timestamps: true });
 
 var Contact = module.exports = mongoose.model('contact', contactSchema);
 

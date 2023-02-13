@@ -3,11 +3,27 @@
     "host": "127.0.0.1",
     "port":8080,
     "db": {
-      "host": "dbaas-db-6015241-a8489cc3.mongo.ondigitalocean.com",
+      "host": "locahost",
       "port":27017,
-      "user":"cashbook",
-      "pass":"5s17DyXYI6A20i83",
+      "user":"boren",
+      "pass":"boren",
       "name":"cashbook"
     }
   }
 }
+
+
+// {
+//   "App": {
+//     "host": "127.0.0.1",
+//     "port":8080,
+//     "db": {
+//       "host": "dbaas-db-6015241-a8489cc3.mongo.ondigitalocean.com",
+//       "port":27017,
+//       "user":"cashbook",
+//       "pass":"5s17DyXYI6A20i83",
+//       "name":"cashbook"
+//     }
+//   }
+// }
+

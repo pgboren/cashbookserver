@@ -1,11 +1,11 @@
+require('../models/index');
 Category = require('../models/category');
 Contact = require('../models/contact');
 institute = require('../models/institute');
 Address = require('../models/address');
 Address = require('../models/item');
 Color = require('../models/color');
-Sale = require('../models/sale');
-
+saleorder = require('../models/saleorder');
 
 Moment = require('moment');
 moment = require('moment-timezone');
@@ -16,6 +16,7 @@ var path = require('path');
 let mongoose = require('mongoose');
 const config = require('config');
 const { Console } = require('console');
+const item = require('../models/item');
 
 exports.get =async function (req, res, next) {
     try {
@@ -149,7 +150,18 @@ exports.update = function(req, res) {
         if (err) {
             res.send(err);
         }
-        assignValueToModel(entity, data, model); 
+
+        if (entity == 'agileboard') {
+            assignBoardValue(data, model); 
+        }
+        else if (entity == 'agilestage') {
+            assignStageValue(data, model); 
+        }
+        else {
+            assignValueToModel(entity, data, model); 
+        }
+        console.log(model);
+
         model.save(function (err) {
             if (err) {
                 if (err.code == 11000) {
@@ -199,7 +211,19 @@ exports.new = function (req, res) {
     var modelClasss = mongoose.model(entity);        
     var model = new modelClasss();
     var data = req.body;
-    assignValueToModel(entity, data, model);
+    if (entity == 'agileboard') {
+        assignBoardValue(data, model); 
+    }
+    else if (entity == 'agilestage') {
+        assignStageValue(data, model); 
+    }
+    else if (entity == 'agiletask') {
+        assignTaskValue(data, model); 
+    }
+    else {
+        assignValueToModel(entity, data, model); 
+    }
+    console.log(model);
     model.save(
         function (err) {
             if (err) {
@@ -215,10 +239,30 @@ exports.new = function (req, res) {
     });
 };
 
+function assignTaskValue(data, model) { 
+    model.name = data.name;
+    model.description = data.description;
+    model.order = data.order;
+    model.board = data.board;
+    model.stage = data.stage;
+}
+
+function assignBoardValue(data, model) { 
+    model.name = data.name;
+    model.color = data.color;
+    model.order = data.order;
+}
+
+function assignStageValue(data, model) { 
+    model.name = data.name;
+    model.color = data.color;
+    model.icon = data.icon;
+    model.board = data.board;
+    model.order = data.order;
+}
+
 function assignValueToModel(entity, data, model) { 
 
-    console.log(data);
-    //Contact, Category, Branch, institute, Item
     model.name = data.name;
     model.enable = data.enable;
 
@@ -230,8 +274,8 @@ function assignValueToModel(entity, data, model) {
     
 
     //Contact
-    model.firstname = data.firstname;
-    model.lastname = data.lastname;
+    model.name = data.name;
+    model.latinname = data.latinname;
     model.gender = data.gender;
     model.nickname = data.nickname;
     model.phoneNumber1 = data.phoneNumber1;
@@ -250,8 +294,9 @@ function assignValueToModel(entity, data, model) {
     model.cost = data.cost;
     model.branch = data.branch;
     model.category = data.category;
-
-
+    model.power = data.power;
+    model.year = data.year;
+    
     model.number = data.number;
     model.branch = data.branch;
     model.customer = data.customer;
@@ -278,6 +323,20 @@ function assignValueToModel(entity, data, model) {
         address.province = data.address.province;
         model.address = address;
     }
+
+    model.branch = data.branch;
+    model.customer = data.customer;
+    model.date = data.date;
+    model.branch = data.branch;
+    model.bookingAmount = data.bookingAmount;
+    model.paymentOption = data.paymentOption;
+    model.institute = data.institute;
+    model.item = data.item;
+    model.quantity = data.quantity;
+    model.price = data.price;
+    model.discount = data.discount;
+    model.status = data.status;
+    model.vehicleCondition = data.vehicleCondition;
 }
 
    

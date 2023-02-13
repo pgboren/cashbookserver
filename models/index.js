@@ -7,9 +7,8 @@ db.mongoose = mongoose;
 
 db.user = require("./user");
 db.role = require("./role");
-db.counter = require("./counter");
-db.column = require("./agilestage");
-db.board = require("./agileboard");
+db.agileboard = require("./agileboard");
+db.agilestage = require("./agilestage");
 db.task = require("./agiletask");
 
 db.ROLES = ["user", "admin", "moderator", "manager", "co", "saler"];

@@ -3,8 +3,8 @@ Contact = require('../models/contact');
 Branch = require('../models/branch');
 Color = require('../models/color');
 Item = require('../models/item');
-Sale = require('../models/sale');
-CoponCode = require('../models/coponcode');
+LoanRequest = require('../models/loanrequest');
+Couponnumbers = require('../models/couponnumber');
 LoanInstitution = require('../models/institute');
 Moment = require('moment');
 moment = require('moment-timezone');
@@ -36,6 +36,15 @@ function populateQuery(entity, query) {
     }
 
     if (entity == 'sale') { 
+        query.populate('branch');
+        query.populate({path:'customer', populate: { path:  'photo', model: 'media' }});
+        query.populate({path:'item', populate: { path:  'photo', model: 'media' }});
+        query.populate({path:'item', populate: { path:  'color', model: 'color' }});                                                                                                                                                                  
+        query.populate({path:'institute', populate: { path:  'logo', model: 'media' }});
+        
+    }
+
+    if (entity == 'loanrequest') { 
         query.populate('branch');
         query.populate({path:'customer', populate: { path:  'photo', model: 'media' }});
         query.populate({path:'item', populate: { path:  'photo', model: 'media' }});
@@ -75,12 +84,31 @@ function getIndexQuery(entity, req) {
     if (req.query.parent != null) 
         condition.parent = req.query.parent;
 
+        
+    if (entity == 'agilestage' && req.query.board != null) 
+        condition.board = req.query.board;
+
+    if (entity == 'agilestask' && req.query.board != null) 
+        condition.board = req.query.board;
+
     entityModel = mongoose.model(entity);        
 
     if (entity == 'category' || entity == 'branch') { 
         sort = {name: 'asc'};
     }
 
+    if (entity == 'agileboard') { 
+        sort = {order: 'asc'};
+    }
+
+    if (entity == 'agilestage') { 
+        sort = {order: 'asc'};
+    }
+
+    if (entity == 'agilestask') { 
+        sort = {stage:'asc' , order: 'asc'};
+    }
+    
     query = entityModel.find(condition).collation({ locale: "en" }).sort(sort);
     populateQuery(entity, query);
     return query;
@@ -117,13 +145,23 @@ exports.get =async function (req, res, next) {
     }
 }
 
-
-
-exports.getConponCode =async function (req, res, next) {
+exports.getNewCouponNumber =async function (req, res, next) {
     try {
-        var query = CoponCode.find({}).sort({entity: 'asc'});
-        query.exec(function(err, coponcodes) {
-            res.json(coponcodes);
+        var query = Couponnumbers.find({ entity: req.params.entity }).sort({number: 'desc'}).limit(1);
+        query.exec(function(err, couponnumbers) {        
+            
+            var number = 0;
+            if (couponnumbers.length > 0) {
+                number = couponnumbers[0].number + 1;
+            }
+            else {
+                number = 1;
+            }
+            var newNumber = new Couponnumbers();
+                newNumber.entity = req.params.entity;
+                newNumber.number = number;
+                newNumber.save();
+            res.json(newNumber);
         });
     }
     catch (e) {
@@ -166,10 +204,18 @@ function createDocumentSnapshot(entity, model) {
         doc = createContactDocumentSnapshot(entity, model);      
     }
 
-    if (entity == 'sale') { 
-        doc = createSaleDocumentSnapshot(entity, model);      
+    if (entity == 'agileboard') { 
+        doc = createAgileBoardSnapshot(entity, model);      
     }
-    
+
+    if (entity == 'agilestage') { 
+        doc = createAgileStageSnapshot(entity, model);      
+    }
+
+    if (entity == 'agiletask') { 
+        doc = createAgileTaskSnapshot(entity, model);      
+    }
+
     return doc;
 }
 
@@ -182,7 +228,6 @@ function createTypeDocumentSnapshot(entity, model) {
     };
     return doc;
 }
-
 
 function createBsItemDocSnapshot(entity, model) {
     var doc = {};
@@ -199,7 +244,15 @@ function createBsItemDocSnapshot(entity, model) {
     }
     general.childrent.name = {label: "name", value:model.name, dataType: "STRING",type:"DATA"};
     general.childrent.nameKh = {label: "nameKh", value:model.nameKh, dataType: "STRING",type:"DATA"};
-    general.childrent.color = {label: "color", value:model.color, dataType: "STRING",type:"DATA"};
+
+    if (model.color != null) {
+        general.childrent.color = {label: "color", value:model.color.name, dataType: "STRING",type:"DATA"};
+    }
+    else {
+        general.childrent.color = {label: "color", value:"", dataType: "STRING",type:"DATA"};
+    }
+    
+    general.childrent.year = {label: "year", value:model.year, dataType: "STRING",type:"DATA"};
     general.childrent.power = {label: "power", value:model.power, dataType: "STRING",type:"DATA"};
     general.childrent.description = {label: "description", value:model.description, dataType: "STRING",type:"DATA"};
     general.childrent.price = {label: "price", value:model.price, dataType: "CURRENCY",type:"DATA", locale: "US"};
@@ -214,30 +267,33 @@ function createBsItemDocSnapshot(entity, model) {
     else {
         general.childrent.status = {label: "status", value: "អសកម្ម", dataType: "BOOLEAN",type:"DATA"}
     }
-    doc.contextMenu = 'model_item_view_action';  
+    doc.contextMenu = 'model_view_action';  
     doc.title = model.name;
 
-    doc.data[entity] = general;
+    doc.data.root = {label:"root", type: "ROOT", dataType: "ROOT", childrent: {}};
+    doc.data.root.childrent.general = general;
     return doc;
 }
 
 function createBsDocSnapshot(entity, model) {
     var doc = {};
     doc._id = model._id;    
+    doc.title = model.name;
     doc.className = entity;
     doc.data = {};
-    var branch = {label:"general", type: "GROUP", dataType: "GROUP"};    
-    branch.childrent = {};
-    branch.childrent.name = {label: "name", value:model.name, dataType: "STRING",type:"DATA"};
+    var general = {label:"general", type: "GROUP", dataType: "GROUP"};    
+    general.childrent = {};
+    general.childrent.name = {label: "name", value:model.name, dataType: "STRING",type:"DATA"};
     if (model.enable) {
-        branch.childrent.status = {label: "status", value: "សកម្ម", dataType: "STRING",type:"DATA"}
+        general.childrent.status = {label: "status", value: "សកម្ម", dataType: "STRING",type:"DATA"}
     }
     else {
-        branch.childrent.status = {label: "status", value: "អសកម្ម", dataType: "BOOLEAN",type:"DATA"}
+        general.childrent.status = {label: "status", value: "អសកម្ម", dataType: "BOOLEAN",type:"DATA"}
     }
     doc.contextMenu = 'model_view_action';  
     doc.title = model.name;
-    doc.data[entity] = branch;
+    doc.data.root = {label:"root", type: "ROOT", dataType: "ROOT", childrent: {}};
+    doc.data.root.childrent.general = general;
     return doc;
 }
 
@@ -246,19 +302,22 @@ function createBsColorDocSnapshot(entity, model) {
     doc._id = model._id;    
     doc.className = entity;
     doc.data = {};
-    var branch = {label:"general", type: "GROUP", dataType: "GROUP"};    
-    branch.childrent = {};
-    branch.childrent.name = {label: "name", value:model.name, dataType: "STRING",type:"DATA"};
-    branch.childrent.code = {label: "code", value:model.code, dataType: "STRING",type:"DATA"};
+    var general = {label:"general", type: "GROUP", dataType: "GROUP"};    
+    general.childrent = {};
+    general.childrent.name = {label: "name", value:model.name, dataType: "STRING",type:"DATA"};
+    general.childrent.code = {label: "code", value:model.code, dataType: "STRING",type:"DATA"};
     if (model.enable) {
-        branch.childrent.status = {label: "status", value: "សកម្ម", dataType: "STRING",type:"DATA"}
+        general.childrent.status = {label: "status", value: "សកម្ម", dataType: "STRING",type:"DATA"}
     }
     else {
-        branch.childrent.status = {label: "status", value: "អសកម្ម", dataType: "BOOLEAN",type:"DATA"}
+        general.childrent.status = {label: "status", value: "អសកម្ម", dataType: "BOOLEAN",type:"DATA"}
     }
     doc.contextMenu = 'model_view_action';  
     doc.title = model.name;
-    doc.data[entity] = branch;
+
+    doc.data = {};
+    doc.data.root = {label:"root", type: "ROOT", dataType: "ROOT", childrent: {}};
+    doc.data.root.childrent.general = general;
     return doc;
 }
 
@@ -267,22 +326,22 @@ function createInstituteDocSnapshot(entity, model) {
     doc._id = model._id;    
     doc.className = entity;
     doc.data = {};
-    var institute = {label:"general", type: "GROUP", dataType: "GROUP"};    
-    institute.childrent = {};
+    var general = {label:"general", type: "GROUP", dataType: "GROUP"};    
+    general.childrent = {};
     if (model.photo) {
-        institute.childrent.photo = {label: "logo", value:model.photo.path, dataType: "PHOTO",type:"DATA", action: "PHOTO_UPLOAD"};
+        general.childrent.photo = {label: "logo", value:model.photo.path, dataType: "PHOTO",type:"DATA", action: "PHOTO_UPLOAD"};
     }
     else {
-        institute.childrent.photo = {label: "logo", value:null, dataType: "PHOTO",type:"DATA", action: "PHOTO_UPLOAD"};
+        general.childrent.photo = {label: "logo", value:null, dataType: "PHOTO",type:"DATA", action: "PHOTO_UPLOAD"};
     }    
 
 
-    institute.childrent.name = {label: "name", value:model.name, dataType: "STRING",type:"DATA"};
+    general.childrent.name = {label: "name", value:model.name, dataType: "STRING",type:"DATA"};
     if (model.enable) {
-        institute.childrent.status = {label: "status", value: "សកម្ម", dataType: "STRING",type:"DATA"}
+        general.childrent.status = {label: "status", value: "សកម្ម", dataType: "STRING",type:"DATA"}
     }
     else {
-        institute.childrent.status = {label: "status", value: "អសកម្ម", dataType: "BOOLEAN",type:"DATA"}
+        general.childrent.status = {label: "status", value: "អសកម្ម", dataType: "BOOLEAN",type:"DATA"}
     }
 
     var address = {label:"address", type: "GROUP", dataType: "GROUP"};    
@@ -298,10 +357,13 @@ function createInstituteDocSnapshot(entity, model) {
     address.childrent.commune = {label: "commune", value:model.address.commune, dataType: "STRING",type:"DATA"};
     address.childrent.district = {label: "district", value:model.address.district, dataType: "STRING",type:"DATA"};
     address.childrent.province = {label: "village", value:model.address.province, dataType: "STRING",type:"DATA"};
-    institute.childrent.address = address;
+    general.childrent.address = address;
     doc.contextMenu = 'model_view_action';  
     doc.title = model.name;
-    doc.data[entity] = institute;
+
+    doc.data = {};
+    doc.data.root = {label:"root", type: "ROOT", dataType: "ROOT", childrent: {}};
+    doc.data.root.childrent.general = general;
     return doc;
 }
 
@@ -309,23 +371,24 @@ function createCategoryDocumentSnapshot(entity, model) {
     var doc = {};
     doc._id = model._id;    
     doc.className = entity;
-    doc.data = {};
-    var category = {label:"general", type: "GROUP",dataType: "GROUP"};    
-    category.childrent = {};
+    var general = {label:"general", type: "GROUP",dataType: "GROUP"};    
+    general.childrent = {};
 
-    category.childrent.name = {label: "name", value:model.name, dataType: "STRING",type:"DATA"};
+    general.childrent.name = {label: "name", value:model.name, dataType: "STRING",type:"DATA"};
 
     if (model.enable) {
-        category.childrent.status = {label: "status", value: "សកម្ម", dataType: "STRING",type:"DATA"}
+        general.childrent.status = {label: "status", value: "សកម្ម", dataType: "STRING",type:"DATA"}
     }
     else {
-        category.childrent.status = {label: "status", value: "អសកម្ម", dataType: "BOOLEAN",type:"DATA"}
+        general.childrent.status = {label: "status", value: "អសកម្ម", dataType: "BOOLEAN",type:"DATA"}
     }
 
     
     doc.contextMenu = 'model_view_action';  
     doc.title = model.name;
-    doc.data.category = category;
+    doc.data = {};
+    doc.data.root = {label:"root", type: "ROOT", dataType: "ROOT", childrent: {}};
+    doc.data.root.childrent.general = general;
     return doc;
 }
 
@@ -334,9 +397,6 @@ function createContactDocumentSnapshot(entity, model) {
     doc._id = model._id;    
     doc.className = entity;
     
-
-    doc.data = {};
-
     var general = {label:"general", type: "GROUP", dataType: "GROUP", childrent: {}};
     if (model.photo) {
         general.childrent.photo = {label: "photo", value:model.photo.path, dataType: "PHOTO",type:"DATA", action: "PHOTO_UPLOAD"};
@@ -345,8 +405,8 @@ function createContactDocumentSnapshot(entity, model) {
         general.childrent.photo = {label: "photo", value:null, dataType: "PHOTO",type:"DATA", action: "PHOTO_UPLOAD"};
     }
 
-    general.childrent.firstname = {label: "first_name", value:model.firstname, dataType: "STRING",type:"DATA"};
-    general.childrent.lastname = {label: "last_name", value:model.lastname, dataType: "STRING",type:"DATA"};
+    general.childrent.latinname = {label: "latin_name", value:model.latinname, dataType: "STRING",type:"DATA"};
+    general.childrent.name = {label: "name", value:model.name, dataType: "STRING",type:"DATA"};
     general.childrent.gender = {label: "gender", value:model.gender, dataType: "STRING",type:"DATA"};
     general.childrent.nickname = {label: "nick_name", value:model.nickname, dataType: "STRING",type:"DATA"};
 
@@ -368,12 +428,14 @@ function createContactDocumentSnapshot(entity, model) {
     address.childrent.province = {label: "province", value:model.address.province, dataType: "STRING",type:"DATA"};
 
 
-    doc.contextMenu = 'model_item_view_action';  
-    doc.title = model.firstname + " " + model.lastname;
-    doc.data.general = general;
-    doc.data.contactNumber = contactNumber;
-    doc.data.address = address;
+    doc.contextMenu = 'model_view_action';  
+    doc.title = model.name;
 
+    doc.data = {};
+    doc.data.root = {label:"root", type: "ROOT", dataType: "ROOT", childrent: {}};
+    doc.data.root.childrent.general = general;
+    doc.data.root.childrent.contactNumber = contactNumber;
+    doc.data.root.childrent.address = address;
     return doc;
 }
 
@@ -460,5 +522,132 @@ function createSaleDocumentSnapshot(entity, model) {
     doc.contextMenu = 'model_view_action';  
     doc.title = model.name;
     doc.data.deal = deal;
+    return doc;
+}
+
+function createLoanRequestDocumentSnapshot(entity, model) {
+    var doc = {};
+    doc._id = model._id;    
+    doc.className = entity;
+    doc.data = {};
+    var deal = {label:"general", type: "GROUP",dataType: "GROUP"};    
+    deal.childrent = {}; 
+
+    var name = model.customer.firstname + " " +  model.customer.lastname;
+
+    deal.childrent.number = {label: "number", value:model.number, dataType: "STRING",type:"DATA"};
+    deal.childrent.status = {label: "status", value:model.status, dataType: "RESOURCE_STRING",type:"DATA"};
+    deal.childrent.branch = {label: "branch", value:model.branch.name, dataType: "STRING",type:"DATA"};
+    var date = new Date(model.date);
+    var dateString = moment(date).format('DD-MM-yyyy');
+    deal.childrent.date = {label: "date", value:dateString, dataType: "STRING",type:"DATA"};
+    deal.childrent.price = {label: "price", value:model.price, dataType: "CURRENCY",type:"DATA", locale: "US"};
+    deal.childrent.paymentType = {label: "paymentType", value:model.paymentType, dataType: "RESOURCE_STRING",type:"DATA"};
+
+
+    if (model.paymentType == 'INSTALLMENT') {
+
+        var institute = {label:"institute", type: "GROUP", id: model.customer._id,dataType: "GROUP"};
+        institute.childrent = {};
+        if (model.institute.logo) {
+            institute.childrent.photo = {label: "logo", value:model.institute.logo.path, dataType: "PHOTO",type:"DATA", action: "PHOTO_VIEW"};
+        }
+        else {
+            institute.childrent.photo = {label: "logo", value:null, dataType: "DOCUMENT",type:"DATA", action: "PHOTO_VIEW"};
+        }    
+        institute.childrent.name = {label: "name", value:model.institute.name, dataType: "STRING",type:"DATA", action: "PHOTO_VIEW"};
+        deal.childrent.institute = institute;
+
+    }
+    
+    var customer = {label:"customer", type: "GROUP", id: model.customer._id,dataType: "GROUP"};    
+    customer.childrent = {};
+    if (model.customer.photo) {
+        customer.childrent.photo = {label: "photo", value:model.customer.photo.path, dataType: "PHOTO",type:"DATA", action: "PHOTO_VIEW"};
+    }
+    else {
+        customer.childrent.photo = {label: "photo", value:null, dataType: "DOCUMENT",type:"DATA", action: "PHOTO_VIEW"};
+    }
+    customer.childrent.firstname = {label: "first_name", value:model.customer.firstname, dataType: "STRING",type:"DATA", visible: 8};
+    customer.childrent.lastname = {label: "last_name", value:model.customer.lastname, dataType: "STRING",type:"DATA", visible: 8};
+    customer.childrent.fullname = {label: "name", value:model.customer.lastname + ' ' + model.customer.firstname, dataType: "STRING",type:"DATA"};
+
+    customer.childrent.phoneNumber1 = {label: "primarynumber", value: model.customer.phoneNumber1, dataType: "PHONENUMBER",type:"DATA"};
+    customer.childrent.phoneNumber2 = {label: "secondarynumber", value: model.customer.phoneNumber2, dataType: "PHONENUMBER",type:"DATA"};
+    customer.childrent.phoneNumber3 = {label: "thridnumber", value: model.customer.phoneNumber3, dataType: "PHONENUMBER",type:"DATA"};
+
+    deal.childrent.customer = customer;
+
+    deal.childrent.item = {label: "item", value:model.item, dataType: "STRING",type:"DATA"};
+
+    var item = {label:"item", id: model.item._id, type: "GROUP",dataType: "GROUP"};    
+    item.childrent = {};
+
+    if (model.item.photo) {
+        item.childrent.photo = {label: "photo", value:model.item.photo.path, dataType: "PHOTO",type:"DATA", action: "PHOTO_VIEW"};
+    }
+    else {
+        item.childrent.photo = {label: "photo", value:null, dataType: "DOCUMENT",type:"DATA", action: "PHOTO_VIEW"};
+    }
+
+    item.childrent.name = {label: "name", value:model.item.name, dataType: "STRING",type:"DATA"};
+    item.childrent.modelyear = {label: "model_year", value:model.item.year, dataType: "STRING",type:"DATA"};
+
+    if (model.item.color) {
+        item.childrent.color = {label: "color", value:model.item.color.name, dataType: "STRING",type:"DATA"};
+    }
+    else {
+        item.childrent.color = {label: "color", value: null, dataType: "STRING",type:"DATA"};
+    }
+
+    item.childrent.vehicleChassisNo = {label: "vehicleChassisNo", value:model.vehicleChassisNo, dataType: "STRING",type:"DATA"};
+    item.childrent.vehicleEngineNo = {label: "vehicleEngineNo", value:model.vehicleEngineNo, dataType: "STRING",type:"DATA"};
+
+    deal.childrent.item = item;
+    
+    doc.contextMenu = 'model_view_action';  
+    doc.title = model.name;
+    doc.data.deal = deal;
+    return doc;
+}
+
+function createAgileBoardSnapshot(entity, model) {
+    var doc = {};
+    doc._id = model._id;    
+    doc.title = model.name;
+    doc.className = entity;
+    doc.data = {};
+    doc.data.name = {label: "name", value:model.name, dataType: "STRING",type:"DATA"};
+    doc.data.color = {label: "color", value:model.color, dataType: "STRING",type:"DATA"};
+    doc.data.order = {label: "order", value:model.order, dataType: "STRING",type:"DATA"};
+    return doc;
+}
+
+function createAgileStageSnapshot(entity, model) {
+    var doc = {};
+    doc._id = model._id;    
+    doc.title = model.name;
+    doc.className = entity;
+    doc.data = {};
+    doc.data.name = {label: "name", value:model.name, dataType: "STRING",type:"DATA"};
+    doc.data.color = {label: "color", value:model.color, dataType: "STRING",type:"DATA"};
+    doc.data.icon = {label: "icon", value:model.icon, dataType: "STRING",type:"DATA"};
+    doc.data.order = {label: "order", value:model.order, dataType: "STRING",type:"DATA"};
+    return doc;
+}
+
+
+function createAgileTaskSnapshot(entity, model) {
+    var doc = {};
+    doc._id = model._id;    
+    doc.title = model.name;
+    doc.parent = model.parent;
+    doc.className = entity;
+    doc.data = {};
+    doc.data.name = {label: "name", value:model.name, dataType: "STRING",type:"DATA"};
+    doc.data.description = {label: "description", value:model.description, dataType: "STRING",type:"DATA"};
+    doc.data.stage = {label: "stage", value:model.stage, dataType: "STRING",type:"DATA"};
+    doc.data.board = {label: "board", value:model.board, dataType: "STRING",type:"DATA"};
+    doc.data.order = {label: "order", value:model.order, dataType: "STRING",type:"DATA"};
     return doc;
 }

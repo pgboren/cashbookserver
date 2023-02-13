@@ -47,7 +47,8 @@ const app = express();
 
 const app_conf = config.get('App');
 
-const connnection_string = util.format('mongodb+srv://cashbook:5s17DyXYI6A20i83@dbaas-db-6015241-a8489cc3.mongo.ondigitalocean.com/cashbook?tls=true&authSource=admin&replicaSet=dbaas-db-6015241');
+// connnection_string = util.format('mongodb+srv://cashbook:5s17DyXYI6sA20i83@dbaas-db-6015241-a8489cc3.mongo.ondigitalocean.com/cashbook?tls=true&authSource=admin&replicaSet=dbaas-db-6015241');
+ connnection_string = util.format('mongodb://boren:boren@127.0.0.1:27017/cashbook');
 
 mongoose.set('useFindAndModify', false);
 mongoose.connect(connnection_string, { useNewUrlParser: true, useUnifiedTopology: true});
@@ -169,6 +170,7 @@ require('./routes/crud.routes')(app);
 require('./routes/view.routes')(app);
 require('./routes/auth.routes')(app);
 require('./routes/user.routes')(app);
+require('./routes/agile.routes')(app);
 
 
 // Launch app to listen to specified port
