@@ -1,0 +1,8 @@
+/* 1 */
+{
+    "_id" : ObjectId("63e33a686706e92dd049204c"),
+    "color" : "#ffffff",
+    "name" : "Soleap Motobike Shop",
+    "order" : 1,
+    "__v" : 0
+}

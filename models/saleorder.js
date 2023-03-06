@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 var saleOrderSchema = mongoose.Schema({
     number:  { type: Number},
@@ -16,5 +15,4 @@ var saleOrderSchema = mongoose.Schema({
     status:{ type:String, require:true},
 }, { timestamps: true });
 
-saleOrderSchema.plugin(AutoIncrement, {inc_field: 'number'});
 module.exports = mongoose.model('saleorder', saleOrderSchema);

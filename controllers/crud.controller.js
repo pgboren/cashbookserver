@@ -220,10 +220,9 @@ exports.new = function (req, res) {
     else if (entity == 'agiletask') {
         assignTaskValue(data, model); 
     }
-    else {
+    else {s
         assignValueToModel(entity, data, model); 
     }
-    console.log(model);
     model.save(
         function (err) {
             if (err) {
@@ -240,11 +239,14 @@ exports.new = function (req, res) {
 };
 
 function assignTaskValue(data, model) { 
+    console.log(data);
     model.name = data.name;
     model.description = data.description;
-    model.order = data.order;
+    model.paymentOption = data.paymentOption;
     model.board = data.board;
     model.stage = data.stage;
+    model.date = data.date
+    model.item = data.item ;
 }
 
 function assignBoardValue(data, model) { 

@@ -5,7 +5,6 @@ var stageSchema = mongoose.Schema({
     color: { type: String , required: true },
     icon: { type: String , required: false },
     order: { type:Number, require:true},
-    
     board: {type: mongoose.Schema.Types.ObjectId, ref: 'agileboard'}
 });
 
