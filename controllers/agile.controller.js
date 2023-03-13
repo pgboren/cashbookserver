@@ -1,6 +1,7 @@
 require('../models/index');
 Moment = require('moment');
 moment = require('moment-timezone');
+const { paginate } = require('mongoose-paginate-v2');
 
 const util = require('util');
 const fs = require("fs");
@@ -8,29 +9,75 @@ var path = require('path');
 let mongoose = require('mongoose');
 const config = require('config');
 const { Console } = require('console');
+const agiletask = require('../models/agiletask');
 
 exports.createtasks = function (req, res) {
     var boardId = "63e33a686706e92dd049204c";
     createTasks(boardId, "63e9dcec0759ba3dc06bfff4", "អតិថិជនថ្នី");
-    createTasks(boardId, "63e9dcf80759ba3dc06bfff7", "រៀបចំឯកសារ");
-    createTasks(boardId, "63e9dd000759ba3dc06bfffa", "បោះបង់ចោល");
-    createTasks(boardId, "63e9dd080759ba3dc06bfffd", "ស្នើរសុំបង់រំលស់");
-    createTasks(boardId, "63e9dd160759ba3dc06c0000", "សំណើរបដិសេធ");
-    createTasks(boardId, "63e9dd1e0759ba3dc06c0003", "សំណើរអនុម័ត");
-    createTasks(boardId, "63e9dd260759ba3dc06c0006", "ចេញវិក័យបត្រ");
-    createTasks(boardId, "63e9dd2d0759ba3dc06c0009", "ទូទាត់ប្រាក់");
+    // createTasks(boardId, "63e9dcf80759ba3dc06bfff7", "រៀបចំឯកសារ");
+    // createTasks(boardId, "63e9dd000759ba3dc06bfffa", "បោះបង់ចោល");
+    // createTasks(boardId, "63e9dd080759ba3dc06bfffd", "ស្នើរសុំបង់រំលស់");
+    // createTasks(boardId, "63e9dd160759ba3dc06c0000", "សំណើរបដិសេធ");
+    // createTasks(boardId, "63e9dd1e0759ba3dc06c0003", "សំណើរអនុម័ត");
+    // createTasks(boardId, "63e9dd260759ba3dc06c0006", "ចេញវិក័យបត្រ");
+    // createTasks(boardId, "63e9dd2d0759ba3dc06c0009", "ទូទាត់ប្រាក់");
 }
 
-function screateTasks(boardId, stageId, name) {
+function createTasks(boardId, stageId, name) {
     var modelClasss = mongoose.model("agiletask");        
-    for(var i=0; j= 10,i<j; i++){
+    for(var i=0; j= 1000,i<j; i++){
         var model = new modelClasss();
         model.name = name + " " + i;
         model.description = "Testing Description " + i;
+        model.paymentOption = "INSTALLMENT";
         model.stage = stageId;
         model.board = boardId;
-        model.order = i;
+        model.item = '63a6915c34b120298058ae00';
+        model.date = 1678697290805;
+        model.phoneNumber = '070433123';
         model.save();
+    }
+}
+
+exports.getTasks = async function (req, res) {
+    console.log('data is called');
+    const requestPage = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const query = req.query.q || {};
+    const sort = { number: 'desc'};
+
+    query.board = { $eq : '63e33a686706e92dd049204c' };
+    query.stage =  { $in : req.query.stages };
+    
+    var Task = mongoose.model('agiletask');        
+    try {
+
+        const options = {
+            page: requestPage,
+            limit: limit,
+            sort: sort,
+            populate: [
+              { path: 'item' },
+              { path: 'stage' },
+              { path: 'board' },
+            ]
+          };
+
+        const { docs, totalPages, totalDocs, page } = await Task.paginate(query, options);
+        var tasks = [];
+        docs.forEach(doc => {
+            tasks.push(createAgileTaskSnapshot('agiletask', doc));
+        });
+
+        res.status(200).json({
+        data: tasks,
+        currentPage: page,
+        totalPages: totalPages,
+        totalItems: totalDocs,
+        });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ message: 'Server error' });
     }
 }
 
@@ -116,6 +163,7 @@ function getTaskQuery(entity, req) {
 }
 
 function getIndexQuery(entity, req) { 
+    
     var query = null;
     var sort = null;
     var entityModel = null;

@@ -1,6 +1,7 @@
 var mongoose = require('mongoose');
 Contact = require('../models/contact');
 const AutoIncrement = require('mongoose-sequence')(mongoose);
+const mongoosePaginate = require('mongoose-paginate-v2');
 
 var taskSchema = mongoose.Schema({
     number:  { type: Number},
@@ -19,7 +20,7 @@ var taskSchema = mongoose.Schema({
     }]
 }, { timestamps: true });
 taskSchema.plugin(AutoIncrement, {inc_field: 'number'});
-
+taskSchema.plugin(mongoosePaginate);
 
 taskSchema.pre('validate', async function(next) {    
     if (this.isNew) {
@@ -31,7 +32,7 @@ taskSchema.pre('validate', async function(next) {
 
         console.log('About to save new document...');
       } else {
-        // perform some action only for existing documents
+        // perform some action only for nodeexisting documents
         console.log('About to update existing document...');
       }
     next();
