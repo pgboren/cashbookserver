@@ -5,7 +5,7 @@ addressSchema = require('../models/address');
 var contactSchema = mongoose.Schema({
     name: { type: String, required: true },
     latinname: { type: String, required: false },
-    gender: { type: String, required: true },
+    gender: { type: String, required: false },
     nickname: {
         type: String,
         required: false

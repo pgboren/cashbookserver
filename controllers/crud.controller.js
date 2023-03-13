@@ -1,6 +1,6 @@
 require('../models/index');
 Category = require('../models/category');
-Contact = require('../models/contact');
+`Contact = require('../models/contact');`
 institute = require('../models/institute');
 Address = require('../models/address');
 Address = require('../models/item');
@@ -239,7 +239,7 @@ exports.new = function (req, res) {
 };
 
 function assignTaskValue(data, model) { 
-    console.log(data);
+    console.log(model);
     model.name = data.name;
     model.description = data.description;
     model.paymentOption = data.paymentOption;
@@ -247,6 +247,9 @@ function assignTaskValue(data, model) {
     model.stage = data.stage;
     model.date = data.date
     model.item = data.item ;
+    model.phoneNumber = data.phoneNumber;
+
+
 }
 
 function assignBoardValue(data, model) { 

@@ -1,12 +1,15 @@
 var mongoose = require('mongoose');
+Contact = require('../models/contact');
 const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 var taskSchema = mongoose.Schema({
     number:  { type: Number},
-    name: { type: String , required: true },
+    name: { type: String , required: true },  
     paymentOption: { type: String , required: true },
     date: { type: Number , required: true },
-    item: {type: mongoose.Schema.Types.ObjectId, ref: 'item', require: true},
+    customer: {type: mongoose.Schema.Types.ObjectId, ref: 'contact', required: true},    
+    item: {type: mongoose.Schema.Types.ObjectId, ref: 'item', required: true},    
+    price: { type:Number, require:true},
     description: { type: String , required: false },
     stage: {type: mongoose.Schema.Types.ObjectId, ref: 'agilestage', required: true},
     board: {type: mongoose.Schema.Types.ObjectId, ref: 'agileboard', required: true},
@@ -16,4 +19,22 @@ var taskSchema = mongoose.Schema({
     }]
 }, { timestamps: true });
 taskSchema.plugin(AutoIncrement, {inc_field: 'number'});
+
+
+taskSchema.pre('validate', async function(next) {    
+    if (this.isNew) {
+        const newContact = new Contact();
+        newContact.name = this.name;
+        newContact.phoneNumber1 = this.phoneNumber;
+        await newContact.save();
+        this.customer = newContact._id;
+
+        console.log('About to save new document...');
+      } else {
+        // perform some action only for existing documents
+        console.log('About to update existing document...');
+      }
+    next();
+});
+
 module.exports = mongoose.model('agiletask', taskSchema);

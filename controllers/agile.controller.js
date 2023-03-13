@@ -228,11 +228,9 @@ function createAgileTaskSnapshot(entity, model) {
     doc.data.name = {label: "name", value:model.name, dataType: "STRING",type:"DATA"};
     doc.data.description = {label: "description", value:model.description, dataType: "STRING",type:"DATA"};
     doc.data.paymentOption = {label: "paymentOption", value:model.paymentOption, dataType: "STRING",type:"DATA"};
-    
     var date = new Date(model.date);
     var dateString = moment(date).format('DD-MM-yyyy');
     doc.data.date = {label: "date", value:dateString, dataType: "STRING",type:"DATA"}
-
     var stage = {label:"stage", type: "GROUP", dataType: "GROUP"};    
     stage.childrent = {};
     stage.childrent.id = {label: "id", value:model.stage.id, dataType: "STRING",type:"DATA"};
