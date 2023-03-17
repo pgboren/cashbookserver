@@ -220,7 +220,7 @@ exports.new = function (req, res) {
     else if (entity == 'agiletask') {
         assignTaskValue(data, model); 
     }
-    else {s
+    else {
         assignValueToModel(entity, data, model); 
     }
     model.save(

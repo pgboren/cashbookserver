@@ -53,7 +53,7 @@ var itemSchema = mongoose.Schema({
     category: { 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'category', 
-        require: true},
+        require: false},
     enable: {type:Boolean, 
         required:true,
         default:false
