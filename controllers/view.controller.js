@@ -1,14 +1,18 @@
-Category = require('../models/category');
-Contact = require('../models/contact');
-Branch = require('../models/branch');
-Color = require('../models/color');
-Item = require('../models/item');
-LoanRequest = require('../models/loanrequest');
-Couponnumbers = require('../models/couponnumber');
-LoanInstitution = require('../models/institute');
-Moment = require('moment');
-moment = require('moment-timezone');
+const Category = require('../models/category');
+const Branch = require('../models/branch');
+const Color = require('../models/color');
+const Item = require('../models/item');
+const LoanRequest = require('../models/loanrequest');
+const Couponnumbers = require('../models/couponnumber');
+const LoanInstitution = require('../models/institute');
 
+
+const Contact = require('../models/contact');
+
+const Moment = require('moment');
+const moment = require('moment-timezone');
+
+const Enum = require('enum')
 const util = require('util');
 const fs = require("fs");
 var path = require('path');
@@ -16,56 +20,133 @@ let mongoose = require('mongoose');
 const config = require('config');
 const { Console } = require('console');
 
-function populateQuery(entity, query) {
-    if (entity == 'item') { 
-        query.populate('category');
-        query.populate('photo');
-    }
-    
-    if (entity == 'contact') { 
-        query.populate('photo');
-    }
+var viewType = new Enum({'LIST_VIEW': 'LIST_VIEW', 'LIST_ITEM_VIEW': 'LIST_ITEM_VIEW'});
 
-    if (entity == 'institute') { 
-        query.populate('photo');
-    }
+exports.getViewData = async function (req, res) {
+    try {
+        var response = null;
+        if (req.params.viewName == viewType.LIST_VIEW.value) {
+            await getListViewData(req, res);
+        }
 
-    if (entity == 'vehicle') { 
-        query.populate('photo');
-        query.populate('category');
-    }
-
-    if (entity == 'sale') { 
-        query.populate('branch');
-        query.populate({path:'customer', populate: { path:  'photo', model: 'media' }});
-        query.populate({path:'item', populate: { path:  'photo', model: 'media' }});
-        query.populate({path:'item', populate: { path:  'color', model: 'color' }});                                                                                                                                                                  
-        query.populate({path:'institute', populate: { path:  'logo', model: 'media' }});
+        if (req.params.viewName == viewType.LIST_ITEM_VIEW.value) {
+            getListItemViewData(req, res);
+        }
         
+    } catch (err) {
+        res.status(500).json({ message: 'Internal Server error' });
     }
+};
 
-    if (entity == 'loanrequest') { 
-        query.populate('branch');
-        query.populate({path:'customer', populate: { path:  'photo', model: 'media' }});
-        query.populate({path:'s', populate: { path:  'photo', model: 'media' }});
-        query.populate({path:'item', populate: { path:  'color', model: 'color' }});                                                                                                                                                                  
-        query.populate({path:'institute', populate: { path:  'logo', model: 'media' }});
-    }
-
-    if (entity == 'agiletask') { 
-        query.populate('stage');
-        query.populate('board'); 
-        query.populate('item'); 
-    }
+async function getListItemViewData(req, res) {
+    const docName = req.params.docname;
+    const docModelClass = mongoose.model(docName);
+    var query = docModelClass.findOne({ _id: req.query.id });
+    query.exec(function(err, model) {      
+        if (!model) {
+            res.status(404).json({ message: `${req.params.docname} with id ${req.params.id} not found` });
+        }
+        else {
+            if (docName == 'contact') {
+                createContactListItemViewData(req, res);
+            }
+        }
+    });
 }
 
-function getQuery(res, id, entity) {
-    var query = null;
-    var entityModel = null;
-    entityModel = mongoose.model(entity); 
-    query = entityModel.findOne({ _id: id });
-    populateQuery(entity, query);
-    return query;
+function createContactListItemViewData(req, res) {
+    const docModelClass = mongoose.model(req.params.docname);
+    var query = docModelClass.findOne({ _id: req.query.id }).populate("photo");
+    query.exec(function(err, contact) {      
+        if (!contact) {
+            res.status(404).json({ message: `${req.params.docname} with id ${req.params.id} not found` });
+        }
+        else {
+            var data = {
+                id: contact._id,
+                name:contact.name,
+                latinname: contact.latinname,
+                phoneNumber: contact.phoneNumber1,
+                photo: contact.photo? contact.photo.path : null
+            };
+            res.status(200).json(data);
+        }
+    });
+}
+
+async function getListViewData(req, res) {
+    const limit = parseInt(req.query.limit) || 10;
+        const { select, orders, filter } = req.body;
+        const docModel = mongoose.model(req.params.docname);
+        const options = {
+            select,
+            page: parseInt(req.query.page) || 1,
+            limit,
+            sort: orders
+        };
+        const result = await docModel.paginate({}, options);
+        const docs = [];
+        result.docs.forEach(model => {
+            var doc = createViewDocumentSnapshot(model, req.params.docname);
+           docs.push(doc);
+        });
+
+        res.status(200).json({
+            data: docs,
+            currentPage: result.page,
+            totalPages: result.totalPages,
+            totalItems: result.totalDocs,
+        });
+}
+
+
+exports.get =async function (req, res, next) {
+    var entityModel = mongoose.model(req.params.document); 
+    var query = entityModel.findOne({ _id: req.params.id });
+    query.exec(function(err, model) {      
+        if (!model) {
+            res.status(404).json({ message: `${req.params.document} with id ${req.params.id} not found` });
+        }
+        else {
+            res.json(model);
+        }
+    });
+    return;
+}
+
+exports.index = async function (req, res) {
+    try {
+        const limit = parseInt(req.query.limit) || 10;
+        const { select, orders, filter } = req.body;
+        const docModel = mongoose.model(req.params.document);
+        const options = {
+            select,
+            page: parseInt(req.query.page) || 1,
+            limit,
+            sort: orders
+        };
+        const result = await docModel.paginate({}, options);
+        const docs = [];
+        result.docs.forEach(model => {
+            var doc = createViewDocumentSnapshot(model, req.params.document);
+           docs.push(doc);
+        });
+        res.status(200).json({
+            data: docs,
+            currentPage: result.page,
+            totalPages: result.totalPages,
+            totalItems: result.totalDocs,
+        });
+    } catch (err) {
+        res.status(500).json({ message: 'Internal Server error' });
+    }
+};
+
+function createViewDocumentSnapshot(doc, documentName) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc._id;
+    viewDocSnapshot.docClassName = documentName;
+    return viewDocSnapshot;
 }
 
 function getIndexQuery(entity, req) { 
@@ -140,9 +221,9 @@ exports.query = function (req, res) {
     }
 }
 
-exports.get =async function (req, res, next) {
+exports.getView =async function (req, res, next) {
     try {
-        getViewModel(res,req.params.id, req.params.entity);        
+        getViewModel(res, req.params.id, req.params.entity);        
     }
     catch (e) {
         next(e) 
@@ -174,7 +255,9 @@ exports.getNewCouponNumber =async function (req, res, next) {
 }
 
 function getViewModel(res, id, entity) {
-   var query = getQuery(res, id, entity);
+   var entityModel = mongoose.model(entity); 
+   var query = entityModel.findOne({ _id: id });
+   populateQuery(entity, query);
     query.exec(function(err, model) {  
         res.json(createDocumentSnapshot(entity, model));
      });
@@ -316,7 +399,7 @@ function createBsColorDocSnapshot(entity, model) {
     else {
         general.childrent.status = {label: "status", value: "អសកម្ម", dataType: "BOOLEAN",type:"DATA"}
     }
-    doc.contextMenu = 'model_view_action';  
+    doc.contextMenu = 'model_view_ac`dftion';  
     doc.title = model.name;
 
     doc.data = {};
@@ -422,7 +505,8 @@ function createContactDocumentSnapshot(entity, model) {
     contactNumber.childrent.telegram = {label: "telegram", value: model.telegram, dataType: "TELEGRAM",type:"DATA"};
 
     var address = {label:"address", type: "GROUP", dataType: "GROUP", childrent: {}};
-    address.childrent.houseno = {label: "houseno", value:model.address.houseNo, dataType: "STRING",type:"DATA"};
+    if (model.address != null) {
+address.childrent.houseno = {label: "houseno", value:model.address.houseNo, dataType: "STRING",type:"DATA"};
     address.childrent.floor = {label: "floor", value:model.address.floor, dataType: "STRING",type:"DATA"};
     address.childrent.roomnumber = {label: "roomnumber", value:model.address.roomNumber, dataType: "STRING",type:"DATA"};
 
@@ -430,6 +514,8 @@ function createContactDocumentSnapshot(entity, model) {
     address.childrent.commune = {label: "commune", value:model.address.commune, dataType: "STRING",type:"DATA"};
     address.childrent.district = {label: "district", value:model.address.district, dataType: "STRING",type:"DATA"};
     address.childrent.province = {label: "province", value:model.address.province, dataType: "STRING",type:"DATA"};
+    }
+    
 
 
     doc.contextMenu = 'model_view_action';  
@@ -647,9 +733,12 @@ function createAgileTaskSnapshot(entity, model) {
     doc.parent = model.parent;
     doc.className = entity;
     doc.data = {};
-    doc.data.name = {label: "name", value:model.name, dataType: "STRING",type:"DATA"};
+    console.log(model.customer);
+    doc.data.name = {label: "name", value:model.name + ' - ' + model.number, dataType: "STRING",type:"DATA"};
+    doc.data.phonenumber = {label: "phonenumber", value:model.customer.phoneNumber1, dataType: "STRING",type:"DATA"};
+    doc.data.price = {label: "price", value:model.price, dataType: "CURRENCY",type:"DATA", locale: "US"};
     doc.data.description = {label: "description", value:model.description, dataType: "STRING",type:"DATA"};
-    doc.data.paymentOption = {label: "paymentOption", value:model.paymentOption, dataType: "STRING",type:"DATA"};
+    doc.data.paymentOption = {label: "paymentOption", value:model.paymentOption, dataType: "RESOURCE_STRING",type:"DATA"};
     var date = new Date(model.date);
     var dateString = moment(date).format('DD-MM-yyyy');
     doc.data.date = {label: "date", value:dateString, dataType: "STRING",type:"DATA"}
@@ -672,6 +761,50 @@ function createAgileTaskSnapshot(entity, model) {
     board.childrent.id = {label: "id", value:model.board.id, dataType: "STRING",type:"DATA"};
     board.childrent.name = {label: "name", value:model.board.name, dataType: "STRING",type:"DATA"};
     doc.data.board = board;
-    doc.data.order = {label: "order", value:model.order, dataType: "STRING",type:"DATA"};
+    doc.contextMenu = 'model_view_action';  
+    doc.data.number = {label: "number", value:model.number, dataType: "STRING",type:"DATA"};
     return doc;
+}
+
+function populateQuery(entity, query) {
+    if (entity == 'item') { 
+        query.populate('category');
+        query.populate('photo');
+    }
+    
+    if (entity == 'contact') { 
+        query.populate('photo');
+    }
+
+    if (entity == 'institute') { 
+        query.populate('photo');
+    }
+
+    if (entity == 'vehicle') { 
+        query.populate('photo');
+        query.populate('category');
+    }
+
+    if (entity == 'sale') { 
+        query.populate('branch');
+        query.populate({path:'customer', populate: { path:  'photo', model: 'media' }});
+        query.populate({path:'item', populate: { path:  'photo', model: 'media' }});
+        query.populate({path:'item', populate: { path:  'color', model: 'color' }});                                                                                                                                                                  
+        query.populate({path:'institute', populate: { path:  'logo', model: 'media' }});   
+    }
+
+    if (entity == 'loanrequest') { 
+        query.populate('branch');
+        query.populate({path:'customer', populate: { path:  'photo', model: 'media' }});
+        query.populate({path:'s', populate: { path:  'photo', model: 'media' }});
+        query.populate({path:'item', populate: { path:  'color', model: 'color' }});                                                                                                                                                                  
+        query.populate({path:'institute', populate: { path:  'logo', model: 'media' }});
+    }
+
+    if (entity == 'agiletask') { 
+        query.populate('stage');
+        query.populate('board'); 
+        query.populate('item'); 
+        query.populate('customer'); 
+    }
 }

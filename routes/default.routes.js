@@ -4,5 +4,5 @@ const { authJwt } = require("../middlewares");
 
 module.exports = function(app) {
     app.post('/api/setup',[authJwt.verifyToken] , asyncHandler(defaultdoc.create));
-    app.post('/api/testdata',[authJwt.verifyToken] , asyncHandler(defaultdoc.testdata));
+    app.post('/api/testdata' , asyncHandler(defaultdoc.testdata));
 };

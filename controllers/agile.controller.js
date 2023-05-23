@@ -21,7 +21,6 @@ exports.getTasks = async function (req, res) {
     query.stage =  { $in : req.query.stages };
     var Task = mongoose.model('agiletask');        
     try {
-
         const options = {
             page: requestPage,
             limit: limit,
@@ -36,7 +35,6 @@ exports.getTasks = async function (req, res) {
         const { docs, totalPages, totalDocs, page } = await Task.paginate(query, options);
         var tasks = [];
         docs.forEach(doc => {
-            
             tasks.push(createAgileTaskSnapshot('agiletask', doc));
         });
 
@@ -52,6 +50,15 @@ exports.getTasks = async function (req, res) {
     }
 }
 
+exports.get =async function (req, res, next) {
+    try {
+        getViewModel(res,req.params.id, 'agiletask');        
+    }
+    catch (e) {
+        next(e) 
+    }
+}
+
 function createAgileTaskSnapshot(entity, model) {
     var doc = {};
     doc._id = model._id;    
@@ -59,9 +66,11 @@ function createAgileTaskSnapshot(entity, model) {
     doc.parent = model.parent;
     doc.className = entity;
     doc.data = {};
+    console.log(model.customer);
     doc.data.name = {label: "name", value:model.name + ' - ' + model.number, dataType: "STRING",type:"DATA"};
+    doc.data.phonenumber = {label: "phonenumber", value:model.customer.phoneNumber1, dataType: "STRING",type:"DATA"};
     doc.data.description = {label: "description", value:model.description, dataType: "STRING",type:"DATA"};
-    doc.data.paymentOption = {label: "paymentOption", value:model.paymentOption, dataType: "STRING",type:"DATA"};
+    doc.data.paymentOption = {label: "paymentOption", value:model.paymentOption, dataType: "RESOURCE_STRING",type:"DATA"};
     var date = new Date(model.date);
     var dateString = moment(date).format('DD-MM-yyyy');
     doc.data.date = {label: "date", value:dateString, dataType: "STRING",type:"DATA"}
@@ -84,18 +93,9 @@ function createAgileTaskSnapshot(entity, model) {
     board.childrent.id = {label: "id", value:model.board.id, dataType: "STRING",type:"DATA"};
     board.childrent.name = {label: "name", value:model.board.name, dataType: "STRING",type:"DATA"};
     doc.data.board = board;
-    doc.data.order = {label: "order", value:model.order, dataType: "STRING",type:"DATA"};
+    doc.contextMenu = 'model_view_action';  
+    doc.data.number = {label: "number", value:model.number, dataType: "STRING",type:"DATA"};
     return doc;
-}
-
-
-exports.get =async function (req, res, next) {
-    try {
-        getViewModel(res,req.params.id, 'agiletask');        
-    }
-    catch (e) {
-        next(e) 
-    }
 }
 
 function getViewModel(res, id, entity) {
@@ -120,5 +120,6 @@ function populateQuery(entity, query) {
         query.populate('stage');
         query.populate('board'); 
         query.populate('item'); 
+        query.populate('customer'); 
     }
 }

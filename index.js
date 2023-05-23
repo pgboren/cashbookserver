@@ -165,7 +165,7 @@ app.post('/api/media/upload', imageUpload.single('file'), async function (req, r
 	} 
 })
   
-app.use('/public', express.static('public'));
+app.use(express.static('public'));
 require('./routes/default.routes')(app);
 require('./routes/crud.routes')(app);
 require('./routes/view.routes')(app);

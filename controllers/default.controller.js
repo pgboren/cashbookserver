@@ -10,6 +10,9 @@ let mongoose = require('mongoose');
 const config = require('config');
 const { Console } = require('console');
 const agiletask = require('../models/agiletask');
+const contact = require('../models/contact');
+const accountType = require('../models/accountType');
+const { add } = require('lodash');
 
 exports.create = async function (req, res) {
     var docClasss = mongoose.model("agileboard");        
@@ -38,16 +41,65 @@ function createDefaultStages(boardId, name, color, icon, order) {
 }
 
 exports.testdata = async function (req, res) {
-    var boardClasss = mongoose.model("agileboard");        
-    var stageClasss = mongoose.model("agilestage");        
-    var name = "soleapmoto";
-    const board = await boardClasss.findOne({ name });
-    const stages = await stageClasss.find();
-    const item = await createItem();
-    stages.forEach(stage => {
-        createTasks(board._id, stage._id, stage.name, item._id);
-        console.log('Create task of ' + stage._id + ' - ' + stage.name )
-    });
+
+    // createAccountType("Assets", "INCREASED", "DECREASED");
+    // createAccountType("Liabilities", "DECREASED", "INCREASED");
+    // createAccountType("Expenses",  "INCREASED", "DECREASED");
+    // createAccountType("Income", "DECREASED", "INCREASED");
+    // createAccountType("Equity",  "DECREASED", "INCREASED");
+
+    for(var i=1;i<=100; i++)
+    {
+        createContact( i);   
+    }
+
+    // var boardClasss = mongoose.model("agileboard");        
+    // var stageClasss = mongoose.model("agilestage");        
+    // var name = "soleapmoto";
+    // const board = await boardClasss.findOne({ name });
+    // const stages = await stageClasss.find();
+    // const item = await createItem();
+    // stages.forEach(stage => {
+    //     createTasks(board._id, stage._id, stage.name, item._id);
+    //     console.log('Create task of ' + stage._id + ' - ' + stage.name )
+    // });
+}
+
+function createAccountType(name, debit_effect, credit_effect) {
+    var AccountType = mongoose.model("accountType");        
+    var accountType = new AccountType();
+    accountType.name = name;
+    accountType.debitEffect = debit_effect;
+    accountType.creditEffect = credit_effect;
+    accountType.save();
+}
+
+function createContact(name) {
+    var Contact = mongoose.model("contact");        
+    var contact = new Contact();
+    contact.name = name;
+    contact.latinname = name;
+    contact.nickname = name;
+    contact.gender = "MALE";
+    contact.phoneNumber1 = "070433123";
+    contact.phoneNumber2 = "087987987";
+    contact.phoneNumber3 = "087987987";
+    contact.facebook = "087987987";
+    contact.telegram = "070433123";
+
+    var address = {};
+    address.houseNo = "125E0E1";
+    address.floor = "2";
+    address.roomNumber = "100";
+    address.postalCode = "855";
+    address.street = "100";
+    address.village = "ភានសារ";
+    address.commune = "ព្រះនិពាន្ធ";
+    address.district = "កងពិសី";
+    address.province = "កំពង់ស្ពឺ";
+    contact.address = address;
+    contact.save();
+
 }
 
 async function createItem() {
@@ -69,9 +121,10 @@ async function createItem() {
     return saveModel;
 }
 
+
 function createTasks(boardId, stageId, name, item) {
     var modelClasss = mongoose.model("agiletask");        
-    for(var i=0; j= 1000,i<j; i++){
+    for(var i=0; j= 1,i<j; i++){
         var model = new modelClasss();
         model.name = name + " " + i;
         model.description = "Testing Description " + i;
@@ -79,6 +132,7 @@ function createTasks(boardId, stageId, name, item) {
         model.stage = stageId;
         model.board = boardId;
         model.item = item;
+        model.price = 2500;
         model.date = 1678697290805;
         model.phoneNumber = '070433123';
         model.save();
