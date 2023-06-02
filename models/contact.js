@@ -13,11 +13,6 @@ var contactSchema = mongoose.Schema({
     phoneNumber3: { type: String, required: false },
     facebook: { type: String, required: false },
     telegram: { type: String, required: false },
-    photo: {
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'media', 
-        require: false
-    },
     address: addressSchema,
 }, { timestamps: true });
 

@@ -11,5 +11,3 @@ const addressSchema = mongoose.Schema({
     district: { type: String, required: false },
     province: { type: String, required: false }
 });
-
-// var address = module.exports = mongoose.model('address', addressSchema);

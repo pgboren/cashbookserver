@@ -9,14 +9,6 @@ const path = require('path');
 const mongoose = require('mongoose');
 const config = require('config');
 
-const Category = require('../models/category');
-const Contact = require('../models/contact');
-const Institute = require('../models/institute');
-const Address = require('../models/address');
-const Item = require('../models/item');
-const Color = require('../models/color');
-const SaleOrder = require('../models/saleorder');
-
 exports.createResource = async (req, res) => {
     const entity = req.params.entity;
     const Model = mongoose.model(entity);

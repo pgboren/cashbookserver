@@ -1,13 +1,6 @@
-const Category = require('../models/category');
-const Branch = require('../models/branch');
-const Color = require('../models/color');
-const Item = require('../models/item');
-const LoanRequest = require('../models/loanrequest');
-const Couponnumbers = require('../models/couponnumber');
-const LoanInstitution = require('../models/institute');
-
 
 const Contact = require('../models/contact');
+const accounttype = require('../models/accounttype');
 
 const Moment = require('moment');
 const moment = require('moment-timezone');
@@ -32,8 +25,8 @@ exports.getViewData = async function (req, res) {
         if (req.params.viewName == viewType.LIST_ITEM_VIEW.value) {
             getListItemViewData(req, res);
         }
-        
     } catch (err) {
+        console.log(err);
         res.status(500).json({ message: 'Internal Server error' });
     }
 };
@@ -56,7 +49,8 @@ async function getListItemViewData(req, res) {
 
 function createContactListItemViewData(req, res) {
     const docModelClass = mongoose.model(req.params.docname);
-    var query = docModelClass.findOne({ _id: req.query.id }).populate("photo");
+    // var query = docModelClass.findOne({ _id: req.query.id }).populate("photo");
+    var query = docModelClass.findOne({ _id: req.query.id });
     query.exec(function(err, contact) {      
         if (!contact) {
             res.status(404).json({ message: `${req.params.docname} with id ${req.params.id} not found` });
@@ -66,8 +60,7 @@ function createContactListItemViewData(req, res) {
                 id: contact._id,
                 name:contact.name,
                 latinname: contact.latinname,
-                phoneNumber: contact.phoneNumber1,
-                photo: contact.photo? contact.photo.path : null
+                phoneNumber: contact.phoneNumber1
             };
             res.status(200).json(data);
         }
@@ -87,7 +80,7 @@ async function getListViewData(req, res) {
         const result = await docModel.paginate({}, options);
         const docs = [];
         result.docs.forEach(model => {
-            var doc = createViewDocumentSnapshot(model, req.params.docname);
+            var doc = createViewData('LIST_VIEW', req.params.docname, model);
            docs.push(doc);
         });
 
@@ -99,168 +92,59 @@ async function getListViewData(req, res) {
         });
 }
 
-
-exports.get =async function (req, res, next) {
-    var entityModel = mongoose.model(req.params.document); 
-    var query = entityModel.findOne({ _id: req.params.id });
-    query.exec(function(err, model) {      
-        if (!model) {
-            res.status(404).json({ message: `${req.params.document} with id ${req.params.id} not found` });
-        }
-        else {
-            res.json(model);
-        }
-    });
-    return;
+function createViewData(viewType, docName, doc) {
+    return createNameViewData(docName, doc);
 }
 
-exports.index = async function (req, res) {
-    try {
-        const limit = parseInt(req.query.limit) || 10;
-        const { select, orders, filter } = req.body;
-        const docModel = mongoose.model(req.params.document);
-        const options = {
-            select,
-            page: parseInt(req.query.page) || 1,
-            limit,
-            sort: orders
-        };
-        const result = await docModel.paginate({}, options);
-        const docs = [];
-        result.docs.forEach(model => {
-            var doc = createViewDocumentSnapshot(model, req.params.document);
-           docs.push(doc);
-        });
-        res.status(200).json({
-            data: docs,
-            currentPage: result.page,
-            totalPages: result.totalPages,
-            totalItems: result.totalDocs,
-        });
-    } catch (err) {
-        res.status(500).json({ message: 'Internal Server error' });
-    }
-};
+function createNameViewData(docName, doc) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc.id;
+    viewDocSnapshot.docClassName = docName;
+    console.log(doc);
+    viewDocSnapshot.data  = {
+        name: { label: "name", value:doc.name, dataType: "STRING",type:"DATA"}
+    };
+    return viewDocSnapshot;
+}
+
+function createAccountTypeViewData(doc) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc._id;
+    viewDocSnapshot.docClassName = 'accounttype';
+    console.log(doc);
+    viewDocSnapshot.data  = {
+        name:{label: "name", value:doc.name, dataType: "STRING",type:"DATA"}
+    };
+    return viewDocSnapshot;
+}
+
+function createAccountTypeViewData(doc) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc._id;
+    viewDocSnapshot.docClassName = 'accounttype';
+    console.log(doc);
+    viewDocSnapshot.data  = {
+        name:{label: "name", value:doc.name, dataType: "STRING",type:"DATA"}
+    };
+    return viewDocSnapshot;
+}
+
+function createContactViewData(doc) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc._id;
+    viewDocSnapshot.docClassName = 'contact';
+    viewDocSnapshot.data  = {
+        name:{label: "name", value:doc.name, dataType: "STRING",type:"DATA"}
+    };
+    return viewDocSnapshot;
+}
 
 function createViewDocumentSnapshot(doc, documentName) {
     var viewDocSnapshot = {};
     viewDocSnapshot._id = doc._id;
+    viewDocSnapshot.doc = doc;
     viewDocSnapshot.docClassName = documentName;
     return viewDocSnapshot;
-}
-
-function getIndexQuery(entity, req) { 
-    var query = null;
-    var sort = null;
-    var entityModel = null;
-    var condition = {};
-
-    if (req.query.name != null) 
-        condition.name = req.query.name;
-
-    if (req.query.active != null) 
-        condition.active = req.query.active;
-
-    if (req.query.name != null) 
-        condition.name = req.query.name;
-
-    if (req.query.enable != null) 
-        condition.enable = req.query.enable;
-
-    if (req.query.parent != null) 
-        condition.parent = req.query.parent;
-
-        
-    if (entity == 'agilestage' && req.query.board != null) 
-        condition.board = req.query.board;
-
-    if (entity == 'agilestask' && req.query.board != null) 
-        condition.board = req.query.board;
-
-    entityModel = mongoose.model(entity);        
-
-    if (entity == 'category' || entity == 'branch') { 
-        sort = {name: 'asc'};
-    }
-
-    if (entity == 'agileboard') { 
-        sort = {order: 'asc'};
-    }
-
-    if (entity == 'agilestage') { 
-        sort = {order: 'asc'};
-    }
-
-    if (entity == 'agilestask') { 
-        sort = {stage:'asc' , order: 'asc'};
-    }
-    query = entityModel.find(condition).collation({ locale: "en" }).sort(sort);
-    populateQuery(entity, query);
-    return query;
-    
-}
-
-exports.query = function (req, res) {
-    try {
-        var entity = req.params.entity;  
-        var query = getIndexQuery(entity, req);
-        query.exec(function(err, entities) {
-            var docs = [];
-            entities.forEach(model => {
-                docs.push(createDocumentSnapshot(entity, model));
-            });
-            
-            res.json(docs);
-        });
-        return;
-
-    }
-    catch (e) {
-        console.log(e);
-        next(e) 
-    }
-}
-
-exports.getView =async function (req, res, next) {
-    try {
-        getViewModel(res, req.params.id, req.params.entity);        
-    }
-    catch (e) {
-        next(e) 
-    }
-}
-
-exports.getNewCouponNumber =async function (req, res, next) {
-    try {
-        var query = Couponnumbers.find({ entity: req.params.entity }).sort({number: 'desc'}).limit(1);
-        query.exec(function(err, couponnumbers) {        
-            
-            var number = 0;
-            if (couponnumbers.length > 0) {
-                number = couponnumbers[0].number + 1;
-            }
-            else {
-                number = 1;
-            }
-            var newNumber = new Couponnumbers();
-                newNumber.entity = req.params.entity;
-                newNumber.number = number;
-                newNumber.save();
-            res.json(newNumber);
-        });
-    }
-    catch (e) {
-        next(e) 
-    }
-}
-
-function getViewModel(res, id, entity) {
-   var entityModel = mongoose.model(entity); 
-   var query = entityModel.findOne({ _id: id });
-   populateQuery(entity, query);
-    query.exec(function(err, model) {  
-        res.json(createDocumentSnapshot(entity, model));
-     });
 }
 
 function createDocumentSnapshot(entity, model) {
@@ -806,5 +690,29 @@ function populateQuery(entity, query) {
         query.populate('board'); 
         query.populate('item'); 
         query.populate('customer'); 
+    }
+}
+
+exports.getNewCouponNumber =async function (req, res, next) {
+    try {
+        var query = Couponnumbers.find({ entity: req.params.entity }).sort({number: 'desc'}).limit(1);
+        query.exec(function(err, couponnumbers) {        
+            
+            var number = 0;
+            if (couponnumbers.length > 0) {
+                number = couponnumbers[0].number + 1;
+            }
+            else {
+                number = 1;
+            }
+            var newNumber = new Couponnumbers();
+                newNumber.entity = req.params.entity;
+                newNumber.number = number;
+                newNumber.save();
+            res.json(newNumber);
+        });
+    }
+    catch (e) {
+        next(e) 
     }
 }

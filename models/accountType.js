@@ -1,9 +1,11 @@
 var mongoose = require('mongoose');
-// // Setup schema
+const mongoosePaginate = require('mongoose-paginate-v2');
+
 const accountTypeSchema = mongoose.Schema({
     name: { type: String, required: true },
     debitEffect: { type: String, required: true },
     creditEffect: { type: String, required: true },
 });
 
-var accountType = module.exports = mongoose.model('accountType', accountTypeSchema);
+accountTypeSchema.plugin(mongoosePaginate);
+module.exports = mongoose.model('accounttype', accountTypeSchema);

@@ -171,8 +171,6 @@ require('./routes/crud.routes')(app);
 require('./routes/view.routes')(app);
 require('./routes/auth.routes')(app);
 require('./routes/user.routes')(app);
-require('./routes/agile.routes')(app);
-
 
 // Launch app to listen to specified port
 app.listen(port, function () {
