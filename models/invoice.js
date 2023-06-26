@@ -1,21 +1,24 @@
 var mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate-v2');
+const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 const invoiceSchema = mongoose.Schema({
-    number: { type: String, required: true },
-    date: {type:Number, require:true},
-    paymentType: { type: String, required: true },
-    contact: {type: mongoose.Schema.Types.ObjectId, ref: 'contact'},
-    institute: {type: mongoose.Schema.Types.ObjectId, ref: 'institute'},
-    item: {type: mongoose.Schema.Types.ObjectId, ref: 'item'},
-    machineNumber: { type: String, required: true },
-    chassisNumber: { type: String, required: true },
-    color: { type: String, required: true },
-    year: {type:Number, require:true},
-    condition: { type: String, required: true },
-    qty: {type:Number, require:true},
-    price: {type:Number, require:true}
+    number: {prefix: { type: String }, count: { type: Number}},
+    date: {type:Number, require:false},
+    customer: {type: mongoose.Schema.Types.ObjectId, ref: 'contact', require: true },
+    institute: {type: mongoose.Schema.Types.ObjectId, ref: 'institute', require: false },
+    item: {type: mongoose.Schema.Types.ObjectId, ref: 'item', require:false},
+    machineNumber: { type: String, required: false },
+    chassisNumber: { type: String, required: false },
+    plateNumber: { type: String, required: false },
+    color: {type: mongoose.Schema.Types.ObjectId, ref: 'color', require:false},
+    year: {type:Number, require:false},
+    condition: { type: String, required: false },
+    paymentoption: { type: String, required: false },
+    qty: {type:Number, require:false},
+    price: {type:Number, require:false}
 });
 
+invoiceSchema.plugin(AutoIncrement, { id: 'invoice_code_seq', inc_field: 'number.count',  start_seq:1000 });
 invoiceSchema.plugin(mongoosePaginate);
 var invoice = module.exports = mongoose.model('invoice', invoiceSchema);

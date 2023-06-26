@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate-v2');
-// Setup schema
-var categorySchema = mongoose.Schema({
+
+var colorSchema = mongoose.Schema({
     name: {
         type: String,
         required: true,
@@ -10,9 +10,8 @@ var categorySchema = mongoose.Schema({
     enable: {type:Boolean, 
         required:true,
         default:false
-    },
-    parent: {type: mongoose.Schema.Types.ObjectId, ref: 'category'}
+    }
 });
 
-categorySchema.plugin(mongoosePaginate);
-module.exports = mongoose.model('category', categorySchema);
+colorSchema.plugin(mongoosePaginate);
+module.exports = mongoose.model('color', colorSchema);

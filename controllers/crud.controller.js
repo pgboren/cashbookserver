@@ -9,7 +9,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const config = require('config');
 
-exports.createResource = async (req, res) => {
+exports.createDoc = async (req, res) => {
     const entity = req.params.entity;
     const Model = mongoose.model(entity);
     const data = req.body;
@@ -21,12 +21,10 @@ exports.createResource = async (req, res) => {
             return res.status(422).json({ errors: errors.array() });
         }
 
-        // Create new model instance and assign values to fields
         const model = new Model(data);
-
-        // Save new model instance to database
         const savedModel = await model.save();
-        return res.status(201).json(savedModel);
+        return res.status(201).json({ id: savedModel._id });
+
     } catch (error) {
         // Handle duplicate key error
         if (error.code === 11000) {
@@ -40,6 +38,24 @@ exports.createResource = async (req, res) => {
         // Handle other errors
         return res.status(500).json({ error: error.message });
     }
+};
+
+exports.getDoc = async (req, res) => {
+    const docName = req.params.entity;
+    const id = req.params.id;
+    const docClass = mongoose.model(docName);
+    docClass.findById(id).exec(function(err, doc) {
+        if (doc) {
+                res.status(200).json({
+                    status: "success",
+                    type: docName,
+                    doc: doc
+                });
+        } else {
+            res.status(404).json({ message: 'Resource was not found.' });
+        }
+    });
+    
 };
 
 exports.delete = function(req, res, next) {
@@ -64,25 +80,57 @@ exports.delete = function(req, res, next) {
 
 exports.patch = function(req, res) {
     const entity = req.params.entity;
-    const modelClass = mongoose.model(entity);        
+    const modelClass = mongoose.model(entity);
     const data = req.body;
-    modelClass.findOneAndUpdate({ _id: req.params.id }, data, function (err, model) {
-        if (err) {
-            console.log(err);
-        } else {
-            res.redirect("/api/view/" + entity + "/" + model.id);
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(422).json({ errors: errors.array() });
         }
-    });
+        modelClass.findOneAndUpdate({ _id: req.params.id }, data, function (err, model) {
+            if (err) {
+                res.status(500).json({ error: err.message });
+            }
+            return res.status(201).json({ id: model._id });
+        });
+    } catch (error) {
+        if (error.code === 11000) {
+            const key = Object.keys(error.keyValue)[0];
+            const value = Object.values(error.keyValue)[0];
+            return res.status(409).json({
+                error: `The ${key}: '${value}' is already in use by another ${entity}.`,
+            });
+        }
+        return res.status(500).json({ error: error.message });
+    }
 }
 
 exports.update = function(req, res) {
     const entity = req.params.entity;
-    const modelClass = mongoose.model(entity);        
+    const Model = mongoose.model(entity);
     const data = req.body;
-    modelClass.findOneAndUpdate({ _id: req.params.id }, data, { new: true }, function(err, updatedModel) {
-        if (err) {
-            res.status(500).send(err);
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(422).json({ errors: errors.array() });
         }
-        res.redirect("/api/view/" + entity + "/" + updatedModel.id);
-    });
+        modelClass.findOneAndUpdate({ _id: req.params.id }, data, function (err, model) {
+            if (err) {
+                res.status(500).json({ error: err.message });
+            }
+            return res.status(201).json({ id: savedModel._id });
+        });
+
+    } catch (error) {
+        if (error.code === 11000) {
+            const key = Object.keys(error.keyValue)[0];
+            const value = Object.values(error.keyValue)[0];
+            return res.status(409).json({
+                error: `The ${key}: '${value}' is already in use by another ${entity}.`,
+            });
+        }
+
+        // Handle other errors
+        return res.status(500).json({ error: error.message });
+    }
 };

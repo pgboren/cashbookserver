@@ -4,13 +4,18 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const config = require('config');
 let mongoose = require('mongoose');
-const Media = require('./models/media');
-const util = require('util');
 const fileUpload = require('express-fileupload');
-var media = require('./controllers/media.controller');
 const multer  = require('multer');
 const moment= require('moment') 
 require('moment-timezone') 
+
+const Media = require('./models/media');
+const util = require('util');
+var media = require('./controllers/media.controller');
+
+const demo = require('./data/demo');
+const initialdata = require('./data/initialdata');
+
 
 const db = require('./models');
 const Role = db.role;
@@ -50,17 +55,18 @@ const app_conf = config.get('App');
 // connnection_string = util.format('mongodb+srv://cashbook:5s17DyXYI6sA20i83@dbaas-db-6015241-a8489cc3.mongo.ondigitalocean.com/cashbook?tls=true&authSource=admin&replicaSet=dbaas-db-6015241');
  connnection_string = util.format('mongodb://boren:boren@127.0.0.1:27017/cashbook');
 
-mongoose.set('useFindAndModify', false);
+// mongoose.set('useFindAndModify', false);
 mongoose.connect(connnection_string, { useNewUrlParser: true, useUnifiedTopology: true});
 var database = mongoose.connection;
 if(!database) {
 	console.log("Error connecting db");
 }
 else {
-	initial();
+	
+	initialdata();
+	demo();
 	console.log("Db connected successfully");
 }
-
 
 app.use(bodyParser.urlencoded({
 	extended: true
@@ -68,73 +74,6 @@ app.use(bodyParser.urlencoded({
 
 app.use(bodyParser.json());
 
-function initial() {
-	console.log("Initial Role");
-	Role.estimatedDocumentCount((err, count) => {
-	  if (!err && count === 0) {
-
-		new Role({
-		  name: "user"
-		}).save(err => {
-		  if (err) {
-			console.log("error", err);
-		  }
-
-		  console.log("added 'user' to roles collection");
-		});
-  
-		new Role({
-		  name: "moderator"
-		}).save(err => {
-		  if (err) {
-			console.log("error", err);
-		  }
-  
-		  console.log("added 'moderator' to roles collection");
-		});
-  
-		new Role({
-		  name: "admin"
-		}).save(err => {
-		  if (err) {
-			console.log("error", err);
-		  }
-  
-		  console.log("added 'admin' to roles collection");
-		});
-
-		new Role({
-			name: "manager"
-		  }).save(err => {
-			if (err) {
-			  console.log("error", err);
-			}
-	
-			console.log("added 'admin' to roles collection");
-		  });
-
-		  new Role({
-			name: "saler"
-		  }).save(err => {
-			if (err) {
-			  console.log("error", err);
-			}
-	
-			console.log("added 'saler' to roles collection");
-		  });
-
-		  new Role({
-			name: "co"
-		  }).save(err => {
-			if (err) {
-			  console.log("error", err);
-			}
-	
-			console.log("added 'co' to roles collection");
-		  });
-	  }
-	});
-  }
 
 function escapeRegExp(string) {
 	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
@@ -166,7 +105,6 @@ app.post('/api/media/upload', imageUpload.single('file'), async function (req, r
 })
   
 app.use(express.static('public'));
-require('./routes/default.routes')(app);
 require('./routes/crud.routes')(app);
 require('./routes/view.routes')(app);
 require('./routes/auth.routes')(app);

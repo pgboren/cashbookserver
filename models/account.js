@@ -7,7 +7,8 @@ const accountSchema = mongoose.Schema({
     name: { type: String, required: true },
     balance: {type:Number, require:true},
     description: { type: String },
-    type: {type: mongoose.Schema.Types.ObjectId, ref: 'accountType'}
+    statement: { type: String, require:true },
+    type: {type: mongoose.Schema.Types.ObjectId, ref: 'accounttype'}
 });
 
 accountSchema.plugin(mongoosePaginate);

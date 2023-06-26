@@ -1,6 +1,14 @@
 
-const Contact = require('../models/contact');
-const accounttype = require('../models/accounttype');
+const db = require('../models');
+
+const AccountType = db.accounttype;
+const Account = db.account;
+const Contact = db.contact;
+const Item = db.item;
+const Category = db.category;
+const Invoice = db.invoice;
+const Institute = db.institute;
+const Loan = db.loan;
 
 const Moment = require('moment');
 const moment = require('moment-timezone');
@@ -12,8 +20,279 @@ var path = require('path');
 let mongoose = require('mongoose');
 const config = require('config');
 const { Console } = require('console');
+const PDFDocument = require('pdfkit');
+const QRCode = require('qrcode');
+const Jimp = require('jimp');
 
-var viewType = new Enum({'LIST_VIEW': 'LIST_VIEW', 'LIST_ITEM_VIEW': 'LIST_ITEM_VIEW'});
+var viewType = new Enum({'LIST_VIEW': 'LIST_VIEW', 'LIST_ITEM_VIEW': 'LIST_ITEM_VIEW', 'DOC_VIEW': 'DOC_VIEW'});
+
+exports.fbqr = async function (req, res) {
+    const options = {
+        color: {
+        dark: '#1164b4',    
+        light: '#FFFFFF',
+        errorCorrectionLevel: 'H',
+            type: 'image/jpeg',
+            quality: 0.8,
+            margin: 1    
+        }
+    };
+    const fbData = 'fb://page/soleapmotor';
+    // const tgData = `tg://resolve?domain=borenpeng`;
+    // Generate the QR code
+    QRCode.toFile('qrcode.jpg', fbData, options, function (err) {
+        if (err) {
+        console.error(err);
+        return;
+        }
+    
+        // Load the QR code image as a Jimp object
+        Jimp.read('qrcode.jpg', function (err, qrCode) {
+        if (err) {
+            console.error(err);
+            return;
+        }
+    
+        // Load the logo image
+        Jimp.read('public/imgs/fb.png', function (err, logo) {
+            if (err) {
+            console.error(err);
+            return;
+            }
+    
+            // Calculate the position to overlay the logo
+            const xPos = (qrCode.bitmap.width - logo.bitmap.width) / 2;
+            const yPos = (qrCode.bitmap.height - logo.bitmap.height) / 2;
+    
+            // Composite the logo onto the QR code
+                // qrCode.composite(logo, xPos, yPos, {
+                // mode: Jimp.BLEND_SOURCE_OVER,
+                // opacitySource: 1,
+                // opacityDest: 1
+                // }); 
+    
+            // Save the final QR code with the logo overlay
+            qrCode.write('fb_qr.jpg', function (err) {
+            if (err) {
+                console.error(err);
+            } else {
+                const qrCodeImage = fs.readFileSync('fb_qr.jpg');
+                res.setHeader('Content-Type', 'image/png');
+                res.setHeader('Content-Disposition', 'inline; filename=telegram_qrcode.png');
+                res.send(qrCodeImage);
+                console.log('QR code with logo overlay saved successfully.');
+            }
+            });
+        });
+        });
+    });  
+}
+
+exports.generateInvoice = async function (req, res) {
+   
+    var query = Invoice.findOne({ _id: req.params.id });
+    query.populate('customer').populate('institute').populate('color')
+    .populate({
+    path: 'item',
+    populate: { path: 'category' }
+    });
+
+    await query.exec(function(err, invoice) {    
+        createPdfFile(req, res, invoice);
+    });
+    
+}
+
+function createPdfFile(req, res, invoice) {
+    const doc = new PDFDocument({size: 'A4', margins: { top: 10, left: 10, right: 10, bottom: 10 }});
+
+            const fileName = invoice._id + '.pdf';
+
+            doc.image('public/imgs/logo.png', 55, 30, {fit: [70, 70]})
+            // doc.image('public/imgs/qr_fb.jpg', 50, 120, {fit: [50, 50]})
+            // doc.image('public/imgs/qr_tg.jpg', 100, 120, {fit: [50, 50]})
+
+            doc.fillColor('#851718');
+            doc.font('public/fonts/KhmerOSniroth.ttf').fontSize(12).text('ទិញ-លក់ ម៉ូតូ កង់បី គ្រប់ប្រភេទ',20, 90);
+            doc.moveDown(0.03);
+            doc.text('មានសាវាកម្មបង់រំលស់ ១០០%',23);
+            doc.font('public/fonts/khmerosmoul.ttf').fontSize(18).text('សុលាភ លក់ម៉ូតូបង់រំលស់',200, 30);
+            doc.moveDown(0.03);
+            doc.font('public/fonts/arialbd.ttf').fontSize(15).text('SOLEAP MOTORSHOP');
+            doc.moveDown(0.2);
+    
+            doc.fillColor('black')
+            doc.font('public/fonts/khmerossystem.ttf').fontSize(9).text('អាស័យដ្ឋាន៖ ភូមិទឹកថ្លា សង្កាត់ក្រាំងពង្រ ខណ្ឌដង្កោ រាជធានីភ្នំពេញ');
+            doc.moveDown(0.1);
+            doc.font('public/fonts/arial.ttf').fontSize(8).text('Address: Tuek Thla Village, Sangkat Krang Pongro, Khan Dangkao, City Phnom Penh');
+            doc.moveDown(0.2);
+            doc.font('public/fonts/khmerossystem.ttf').fontSize(9).text('ទូរស័ព្ទលេខ៖ ០៧៧ ៤១ ៤៣ ៨៩, ០៩៦ ៩៧ ៩៨ ៩២៨, ០៨៨ ៩៧ ៩៨ ៩២៨ ');
+            doc.moveDown(0.1);
+            doc.font('public/fonts/arial.ttf').fontSize(8).text('Telephone: 077 41 43 89, 096 97 98 928, 088 97 98 928');
+            doc.moveDown(0.1);
+            doc.font('public/fonts/khmerossystem.ttf').fontSize(8).text('Telegram: 096 97 98 928 Facebook: សុលាភ លក់ម៉ូតូបង់រំលស់');
+            doc.moveDown(5);
+            doc.text('', 0, 180);
+            doc.font('public/fonts/khmerosmoul.ttf').fontSize(18).text('វិក្កយបត្រ', {align: 'center'});
+            doc.moveDown(0.1);
+            doc.font('public/fonts/arial.ttf').fontSize(18).text('INVOICE', {align: 'center'});
+            doc.moveDown(0.3);
+            doc.font('public/fonts/khmerossystem.ttf').fontSize(9);
+    
+            doc.text('អតិថិជន / Customer             :',20, 250);
+            doc.moveUp();
+            doc.text(invoice.contact.name, 150);
+            doc.moveDown(0.2);    
+            
+            doc.text('អាស័យដ្ឋាន /  Address         :', 20);
+            doc.moveUp();
+            doc.text(invoice.contact.address, 150, 270, { width: 190, align: 'justify'});
+            doc.moveDown(0.2);
+            doc.text('លេខសំគាល់ /  Code            :', 20);
+
+            doc.text(invoice.contact.type + '-' + invoice.contact.number, 150, 305, { width: 190});
+            doc.moveDown(0.2);
+            doc.text('ទូរស័ព្ទលេខ / Telephone       :', 20);
+            doc.text(invoice.contact.phoneNumber, 150, 325, { width: 190});
+        
+            doc.text('លេខរៀងវិក្កបត្រ / Invoice No : ',350 ,250 );
+            doc.text( invoice.number.toString().padStart(6, '0'),475 ,250);
+            doc.moveDown(0.2);
+
+            var date = new Date(invoice.date);
+        
+            doc.text('កាលបរិច្ឆេទ / Date                :', 350);
+            doc.moveUp();
+            doc.text(moment(date).format('DD/MM/yyyy'),475);
+            doc.text('', 0, 360);
+            const startX = 20;
+            const startY = 360;
+            const cellWidth = 50;
+            const cellHeight = 30;
+            doc.lineWidth(0.1);
+            var x = startX + 0 * cellWidth;
+            var y = startY;
+            
+            doc.rect(x, y, 30, 40).fillAndStroke('#ffffff', '#000000');
+            doc.font('public/fonts/KhmerOSNew-Bold.ttf').fontSize(10);
+            doc.fillColor('#000000').text("ល.រ", x + 5, y + 5, { width: 20, align: 'center'});
+            doc.font('Helvetica-Bold').fontSize(10);
+            doc.fillColor('#000000').text("No", x + 5, y + 20, { width: 20, align: 'center'});
+        
+            x = x + 30;
+            doc.rect(x, y, 225, 40).fillAndStroke('#ffffff', '#000000');
+            doc.font('public/fonts/KhmerOSNew-Bold.ttf').fontSize(10);
+            doc.fillColor('#000000').text("បរិយាយមុខទំនិញ", x + 5, y + 5, { width: 225, align: 'center'});
+            doc.font('Helvetica-Bold').fontSize(10);
+            doc.fillColor('#000000').text("Description", x + 5, y + 20, { width: 225, align: 'center'});
+        
+            x = x + 225;
+            doc.rect(x, y, 60, 40).fillAndStroke('#ffffff', '#000000');
+            doc.font('public/fonts/KhmerOSNew-Bold.ttf').fontSize(10);
+            doc.fillColor('#000000').text("បរិមាណ", x + 5, y + 5, { width: 50, align: 'center'});
+            doc.font('Helvetica-Bold').fontSize(10);
+            doc.fillColor('#000000').text("Quantity", x + 5, y + 20, { width: 50, align: 'center'});
+        
+            x = x + 60;
+            doc.rect(x, y, 120, 40).fillAndStroke('#ffffff', '#000000');
+            doc.font('public/fonts/KhmerOSNew-Bold.ttf').fontSize(10);
+            doc.fillColor('#000000').text("តំលៃឯកតា", x + 5, y + 5, { width: 110, align: 'center'});
+            doc.font('Helvetica-Bold').fontSize(10);
+            doc.fillColor('#000000').text("Unit Price", x + 5, y + 20, { width: 110, align: 'center'});
+        
+            x = x + 120;
+            doc.rect(x, y, 120, 40).fillAndStroke('#ffffff', '#000000');
+            doc.font('public/fonts/KhmerOSNew-Bold.ttf').fontSize(10);
+            doc.fillColor('#000000').text("តំលៃសរុប", x + 5, y + 5, { width: 110, align: 'center'});
+            doc.font('Helvetica-Bold').fontSize(10);
+            doc.fillColor('#000000').text("Amount", x + 5, y + 20, { width: 110, align: 'center'});
+
+            x = startX;
+            y = y + 40;
+            doc.rect(x, y, 30, 200).fillAndStroke('#ffffff', '#000000');
+            doc.fillColor('#000000').text(1, x + 5, y + 5, { width: 20, align: 'center'});
+
+            x = x + 30;
+            doc.font('public/fonts/khmerossystem.ttf').fontSize(10);
+            doc.rect(x, y, 225, 200).fillAndStroke('#ffffff', '#000000');
+            doc.fillColor('#000000').text(invoice.item.category.name, x + 5, y + 5, { width: 225});
+            doc.fillColor('#000000').text(invoice.item.name + " - ព៌ណ" + invoice.color.name +  " - ឆ្នាំ" + invoice.year, x + 5, y + 20, { width: 225});
+            doc.fillColor('#000000').text("លេខតួរ: " + invoice.chassisNumber, x + 5, y + 35, { width: 225});
+            doc.fillColor('#000000').text("លេខម៉ាស៊ីន: " + invoice.machineNumber, x + 5, y + 50, { width: 225});
+
+            x = x + 225;
+            doc.rect(x, y, 60, 200).fillAndStroke('#ffffff', '#000000');
+            doc.fillColor('#000000').text(invoice.qty, x + 5, y + 5, { width: 50, align: 'center'});
+
+            const priceFormatter = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+
+            x = x + 60;
+            doc.rect(x, y, 120, 200).fillAndStroke('#ffffff', '#000000');
+            doc.fillColor('#000000').text(priceFormatter.format(invoice.price), x + 5, y + 5, { width: 110, align: 'right'});
+            
+            x = x + 120;
+            doc.rect(x, y, 120, 200).fillAndStroke('#ffffff', '#000000');
+            doc.fillColor('#000000').text(priceFormatter.format(invoice.price), x + 5, y + 5, { width: 110, align: 'right'});
+
+            y = y + 200;
+            x = startX + 315;
+            doc.rect(x, y, 120, 40).fillAndStroke('#ffffff', '#000000');
+            doc.font('public/fonts/KhmerOSNew-Bold.ttf').fontSize(11);
+            doc.fillColor('#000000').text("សរុប", x + 5, y + 5, { width: 120});
+            doc.font('Helvetica-Bold').fontSize(11);
+            doc.fillColor('#000000').text("Grand Total", x + 5, y + 25, { width: 120});
+
+            x = x + 120;
+
+            const totalCurrencyFormatter = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                currencyDisplay: 'code',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+
+            doc.rect(x, y, 120, 40).fillAndStroke('#ffffff', '#000000');
+            doc.font('Helvetica-Bold').fontSize(11);
+            doc.fillColor('#000000').text(totalCurrencyFormatter.format(invoice.price), x + 5, y + 15, { width: 110, align: 'right'});
+
+            y = 750;
+            x = 375;
+            doc.font('public/fonts/KhmerOSNew-Bold.ttf').fontSize(12);
+            doc.fillColor('#000000').text("ហត្តលេខា និងឈ្មោះអ្នកលក់", x + 5, y + 5, { width: 200, align:'center'});
+            doc.font('Helvetica-Bold').fontSize(10);
+            doc.fillColor('#000000').text("Seller's Signature & Name", x + 5, y + 25, { width: 200, align:'center'});
+
+            y = 750;
+            x = 20;
+            doc.font('public/fonts/KhmerOSNew-Bold.ttf').fontSize(12);
+            doc.fillColor('#000000').text("ហត្តលេខា និងឈ្មោះអ្នកទិញ", x + 5, y + 5, { width: 200, align:'center'});
+            doc.font('Helvetica-Bold').fontSize(10);
+            doc.fillColor('#000000').text("Customer's Signature & Name", x + 5, y + 25, { width: 200, align:'center'});
+
+            y = 790;
+            x = 20;
+            doc.font('public/fonts/KhmerOSNew-Regular.ttf').fontSize(8);
+            doc.fillColor('#000000').text("សម្គាល់៖ ច្បាប់ដើមសម្រាប់អ្នកទិញ ច្បាប់ចម្លងសម្រាប់អ្នកលក់", x + 5, y + 5, { width: 300, align:'left'});
+            doc.font('Helvetica').fontSize(8);
+            doc.fillColor('#000000').text("Note: Original Invoice for customer, copied invoice for seller", x + 5, y + 20, { width: 300, align:'left'});
+
+            y = startY + 110;
+
+            doc.lineCap('butt').moveTo(20, y).dash(2, {space: 3}).lineTo(575, y).stroke();
+
+             res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `inline; filename=${fileName}`);
+
+            doc.pipe(res);
+            doc.end();
+            console.log('pdf created');
+}
 
 exports.getViewData = async function (req, res) {
     try {
@@ -23,45 +302,54 @@ exports.getViewData = async function (req, res) {
         }
 
         if (req.params.viewName == viewType.LIST_ITEM_VIEW.value) {
-            getListItemViewData(req, res);
+            await getListItemViewData(req, res);
         }
+
+        if (req.params.viewName == viewType.DOC_VIEW.value) {
+            await getListItemViewData(req, res);
+        }
+
     } catch (err) {
         console.log(err);
         res.status(500).json({ message: 'Internal Server error' });
     }
 };
 
-async function getListItemViewData(req, res) {
+exports.getListItemViewData = async function (req, res) {
+    try {
+        getListItemViewData(req, res);
+    } catch (err) {
+        res.status(500).json({ message: 'Internal Server error' });
+    }
+};
+
+async function getViewData(req, res) {
     const docName = req.params.docname;
     const docModelClass = mongoose.model(docName);
     var query = docModelClass.findOne({ _id: req.query.id });
+    query.populate(getPopulateField(docName))
     query.exec(function(err, model) {      
         if (!model) {
             res.status(404).json({ message: `${req.params.docname} with id ${req.params.id} not found` });
         }
         else {
-            if (docName == 'contact') {
-                createContactListItemViewData(req, res);
-            }
+            var data = createViewData(req.params.docname, model);
+            res.status(200).json(data);
         }
     });
 }
 
-function createContactListItemViewData(req, res) {
-    const docModelClass = mongoose.model(req.params.docname);
-    // var query = docModelClass.findOne({ _id: req.query.id }).populate("photo");
+async function getListItemViewData(req, res) {
+    const docName = req.params.docname;
+    const docModelClass = mongoose.model(docName);
     var query = docModelClass.findOne({ _id: req.query.id });
-    query.exec(function(err, contact) {      
-        if (!contact) {
+    query.populate(getPopulateField(docName))
+    query.exec(function(err, model) {      
+        if (!model) {
             res.status(404).json({ message: `${req.params.docname} with id ${req.params.id} not found` });
         }
         else {
-            var data = {
-                id: contact._id,
-                name:contact.name,
-                latinname: contact.latinname,
-                phoneNumber: contact.phoneNumber1
-            };
+            var data = createViewData(req.params.docname, model);
             res.status(200).json(data);
         }
     });
@@ -72,15 +360,15 @@ async function getListViewData(req, res) {
         const { select, orders, filter } = req.body;
         const docModel = mongoose.model(req.params.docname);
         const options = {
-            select,
             page: parseInt(req.query.page) || 1,
-            limit,
-            sort: orders
+            populate: getPopulateField(req.params.docname),
+            limit: limit
         };
+
         const result = await docModel.paginate({}, options);
         const docs = [];
         result.docs.forEach(model => {
-            var doc = createViewData('LIST_VIEW', req.params.docname, model);
+            var doc = createViewData(req.params.docname, model);
            docs.push(doc);
         });
 
@@ -92,103 +380,203 @@ async function getListViewData(req, res) {
         });
 }
 
-function createViewData(viewType, docName, doc) {
-    return createNameViewData(docName, doc);
+function getPopulateField(docName) {
+    if (docName == 'account') {
+        return ["type"];
+    }
+
+    if (docName == 'item') {
+       return ["account", "category", "specifications"];
+    }
+
+    if (docName == 'invoice') {
+        return ["customer", "institute", "item", "color"];
+    }
+
+    if (docName == 'loan') {
+        return ["invoice", "institute", "customer", "color"];
+    }
+
+}
+
+function createViewData(docName, doc) {
+    var data = null;
+
+    if (docName == 'contact') {
+        data = createContactListViewData(docName, doc);
+    }
+
+    if (docName == 'item') {
+        data = createItemListViewData(docName, doc);
+    }
+    
+    if (docName == 'account') {
+        data = createAccountViewData(docName, doc);
+    }
+
+    if (docName == 'accounttype') {
+        data = createAccountTypeViewData(docName, doc);
+    }
+
+    if (docName == 'category') {
+        data = createNameViewData(docName, doc);
+    }
+
+    if (docName == 'institute') {
+        data = createInstituteViewData(docName, doc);
+    }
+
+    if (docName == 'invoice') {
+        data = createInvoiceViewData(docName, doc);
+    }
+
+    if (docName == 'color') {
+        data = createNameViewData(docName, doc);
+    }
+
+    if (docName == 'loan') {
+        data = createLoanViewData(docName, doc);
+    }
+    return data;
+}
+
+function createLoanViewData(docName, doc) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc.id;
+    viewDocSnapshot.docClassName = docName;
+    var date = new Date(doc.date);
+    var dateString = moment(date).format('DD/MM/yyyy');
+    viewDocSnapshot.data  = {
+        contractNumber: { label: "contractNumber", value:doc.contractNumber, dataType: "STRING", type:"DATA"},
+        date: {label: "date", value:dateString, dataType: "STRING",type:"DATA"},
+        institute : {label: "institute", value:doc.institute.name, dataType: "STRING",type:"DATA"},
+        customer : {label: "customer", value:doc.customer.name, dataType: "STRING",type:"DATA"},
+        invoice : {label: "invoice", value:doc.invoice.name, dataType: "STRING",type:"DATA"},
+        item: {label: "item", value:doc.item.name, dataType: "STRING",type:"DATA"},
+        color: {label: "color", value:doc.color.name, dataType: "STRING",type:"DATA"},
+        year: {label: "year", value:doc.year, dataType: "STRING",type:"DATA"},
+        condition: {label: "condition", value:doc.condition, dataType: "RESOURCE_STRING",type:"DATA"},
+        paymentoption: {label: "paymentoption", value:doc.paymentoption, dataType: "RESOURCE_STRING",type:"DATA"},
+        price:  {label: "price", value:doc.price, dataType: "CURRENCY",type:"DATA", locale: "US"}
+    };
+    return viewDocSnapshot;
+}
+
+
+function createInvoiceViewData(docName, doc) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc.id;
+    viewDocSnapshot.docClassName = docName;
+    var date = new Date(doc.date);
+    var dateString = moment(date).format('DD/MM/yyyy');
+    viewDocSnapshot.data  = {
+        number: { label: "number", value: doc.number.prefix + '-' + doc.number.count , dataType: "STRING", type:"DATA", format: "%06d"},
+        date: {label: "date", value:dateString, dataType: "STRING",type:"DATA"},
+        customer : {label: "contact", value:doc.customer.name, dataType: "STRING",type:"DATA"},
+        institute : {label: "institute", value:doc.institute ? doc.institute.name : null, dataType: "STRING",type:"DATA"},
+        item: {label: "item", value:doc.item.name, dataType: "STRING",type:"DATA"},
+        color: {label: "color", value:doc.color.name, dataType: "STRING",type:"DATA"},
+        year: {label: "year", value:doc.year, dataType: "STRING",type:"DATA"},
+        condition: {label: "condition", value:doc.condition, dataType: "RESOURCE_STRING",type:"DATA"},
+        paymentoption: {label: "paymentoption", value:doc.paymentoption, dataType: "RESOURCE_STRING",type:"DATA"},
+        price:  {label: "price", value:doc.price, dataType: "CURRENCY",type:"DATA", locale: "US"}
+    };
+
+    return viewDocSnapshot;
+}
+
+function createAccountViewData(docName, doc) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc.id;
+    viewDocSnapshot.docClassName = docName;
+    viewDocSnapshot.data  = {
+        name: { label: "name", value:doc.name, dataType: "STRING",type:"DATA"},
+        type: { label: "type", value:doc.type.name, dataType: "STRING",type:"DATA"},
+        amount:  {label: "amount", value:0, dataType: "CURRENCY",type:"DATA", locale: "US"}
+    };
+    return viewDocSnapshot;
+}
+
+function createItemListViewData(docName, doc) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc.id;
+    
+    viewDocSnapshot.docClassName = docName;
+
+    var general = {label:"general", dataType: "GROUP", type: "GROUP"};    
+    
+    general.childrent  = {
+        name: { label: "name", value:doc.name, dataType: "STRING",type:"DATA"},
+        category: { label: "category", value:doc.category.name, dataType: "STRING",type:"DATA"},
+        account: { label: "account", value:doc.account.number + ' : ' + doc.account.name , dataType: "STRING",type:"DATA"},
+        price:  {label: "price", value:doc.price, dataType: "CURRENCY",type:"DATA", locale: "US"},
+        cost:  {label: "cost", value:doc.cost, dataType: "CURRENCY",type:"DATA", locale: "US"},
+        description:  {label: "description", value:doc.description, dataType: "STRING",type:"DATA"},
+        isInventory:  {label: "isInventory", value:doc.isInventory , dataType: "BOOLEAN",type:"DATA"},
+        account:  {label: "account", value:doc.account._id, dataType: "STRING",type:"DATA"},
+        enable:  {label: "enable", value:doc.enable, dataType: "BOOLEAN",type:"DATA"},
+    };
+
+    var specificationGroup = {label:"specification", dataType: "GROUP", type: "GROUP"};    
+    
+    specificationGroup.childrent = {};
+    doc.specifications.forEach(function(specification) {
+        specificationGroup.childrent[specification.name] = {label: specification.name, value:specification.value, dataType: "STRING",type:"DATA"} ;
+    });
+
+    console.log(specificationGroup);
+    return viewDocSnapshot;
+}
+
+function createContactListViewData(docName, doc) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc.id;
+    viewDocSnapshot.docClassName = docName;
+    viewDocSnapshot.data  = {
+        code: { label: "code", value:doc.type + '-' + doc.number, dataType: "STRING",type:"DATA"},
+        name: { label: "name", value:doc.name, dataType: "STRING",type:"DATA"},
+        latinname: { label: "latinname", value:doc.latinname, dataType: "STRING",type:"DATA"},
+        gender: { label: "gender", value:doc.gender, dataType: "RESOURCE_STRING",type:"DATA"},
+        nickname: { label: "nickname", value:doc.nickname, dataType: "STRING",type:"DATA"},
+        phoneNumber: { label: "phoneNumber", value:doc.phoneNumber, dataType: "STRING",type:"DATA"},
+        facebook: { label: "facebook", value:doc.facebook, dataType: "STRING",type:"DATA"},
+        telegram: { label: "telegram", value:doc.telegram, dataType: "STRING",type:"DATA"},
+        address: { label: "address", value:doc.address, dataType: "STRING",type:"DATA"}    
+    };
+    return viewDocSnapshot;
+}
+
+function createAccountTypeViewData(docName, doc) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc._id;
+    viewDocSnapshot.docClassName = 'accounttype';
+    viewDocSnapshot.data  = {
+        name:{label: "name", value:doc.name, dataType: "STRING",type:"DATA"}
+    };
+    return viewDocSnapshot;
 }
 
 function createNameViewData(docName, doc) {
     var viewDocSnapshot = {};
-    viewDocSnapshot._id = doc.id;
+    viewDocSnapshot._id = doc._id;
     viewDocSnapshot.docClassName = docName;
-    console.log(doc);
-    viewDocSnapshot.data  = {
-        name: { label: "name", value:doc.name, dataType: "STRING",type:"DATA"}
-    };
-    return viewDocSnapshot;
-}
-
-function createAccountTypeViewData(doc) {
-    var viewDocSnapshot = {};
-    viewDocSnapshot._id = doc._id;
-    viewDocSnapshot.docClassName = 'accounttype';
-    console.log(doc);
     viewDocSnapshot.data  = {
         name:{label: "name", value:doc.name, dataType: "STRING",type:"DATA"}
     };
     return viewDocSnapshot;
 }
 
-function createAccountTypeViewData(doc) {
+function createInstituteViewData(docName, doc) {
     var viewDocSnapshot = {};
     viewDocSnapshot._id = doc._id;
-    viewDocSnapshot.docClassName = 'accounttype';
-    console.log(doc);
+    viewDocSnapshot.docClassName = docName;
     viewDocSnapshot.data  = {
-        name:{label: "name", value:doc.name, dataType: "STRING",type:"DATA"}
+        name:{label: "name", value:doc.name, dataType: "STRING",type:"DATA"},
+        address:{label: "address", value:doc.address, dataType: "STRING",type:"DATA"}
     };
     return viewDocSnapshot;
 }
 
-function createContactViewData(doc) {
-    var viewDocSnapshot = {};
-    viewDocSnapshot._id = doc._id;
-    viewDocSnapshot.docClassName = 'contact';
-    viewDocSnapshot.data  = {
-        name:{label: "name", value:doc.name, dataType: "STRING",type:"DATA"}
-    };
-    return viewDocSnapshot;
-}
-
-function createViewDocumentSnapshot(doc, documentName) {
-    var viewDocSnapshot = {};
-    viewDocSnapshot._id = doc._id;
-    viewDocSnapshot.doc = doc;
-    viewDocSnapshot.docClassName = documentName;
-    return viewDocSnapshot;
-}
-
-function createDocumentSnapshot(entity, model) {
-
-    var doc = null;
-
-    if (entity == 'category') { 
-        doc = createCategoryDocumentSnapshot(entity, model);      
-    }
-
-    if (entity == 'item') { 
-        doc = createBsItemDocSnapshot(entity, model);      
-    }
-
-    if (entity == 'color') { 
-        doc = createBsColorDocSnapshot(entity, model);      
-    }
-
-    if (entity == 'branch') { 
-        doc = createBsDocSnapshot(entity, model);      
-    }
-
-    if (entity == 'institute') { 
-        doc = createInstituteDocSnapshot(entity, model);      
-    }
-
-    if (entity == 'contact') { 
-        doc = createContactDocumentSnapshot(entity, model);      
-    }
-
-    if (entity == 'agileboard') { 
-        doc = createAgileBoardSnapshot(entity, model);      
-    }
-
-    if (entity == 'agilestage') { 
-        doc = createAgileStageSnapshot(entity, model);      
-    }
-
-    if (entity == 'agiletask') { 
-        doc = createAgileTaskSnapshot(entity, model);      
-    }
-
-    return doc;
-}
 
 function createTypeDocumentSnapshot(entity, model) {
     var doc = {};
@@ -390,7 +778,7 @@ function createContactDocumentSnapshot(entity, model) {
 
     var address = {label:"address", type: "GROUP", dataType: "GROUP", childrent: {}};
     if (model.address != null) {
-address.childrent.houseno = {label: "houseno", value:model.address.houseNo, dataType: "STRING",type:"DATA"};
+    address.childrent.houseno = {label: "houseno", value:model.address.houseNo, dataType: "STRING",type:"DATA"};
     address.childrent.floor = {label: "floor", value:model.address.floor, dataType: "STRING",type:"DATA"};
     address.childrent.roomnumber = {label: "roomnumber", value:model.address.roomNumber, dataType: "STRING",type:"DATA"};
 
@@ -400,8 +788,6 @@ address.childrent.houseno = {label: "houseno", value:model.address.houseNo, data
     address.childrent.province = {label: "province", value:model.address.province, dataType: "STRING",type:"DATA"};
     }
     
-
-
     doc.contextMenu = 'model_view_action';  
     doc.title = model.name;
 
@@ -617,7 +1003,6 @@ function createAgileTaskSnapshot(entity, model) {
     doc.parent = model.parent;
     doc.className = entity;
     doc.data = {};
-    console.log(model.customer);
     doc.data.name = {label: "name", value:model.name + ' - ' + model.number, dataType: "STRING",type:"DATA"};
     doc.data.phonenumber = {label: "phonenumber", value:model.customer.phoneNumber1, dataType: "STRING",type:"DATA"};
     doc.data.price = {label: "price", value:model.price, dataType: "CURRENCY",type:"DATA", locale: "US"};
@@ -648,49 +1033,6 @@ function createAgileTaskSnapshot(entity, model) {
     doc.contextMenu = 'model_view_action';  
     doc.data.number = {label: "number", value:model.number, dataType: "STRING",type:"DATA"};
     return doc;
-}
-
-function populateQuery(entity, query) {
-    if (entity == 'item') { 
-        query.populate('category');
-        query.populate('photo');
-    }
-    
-    if (entity == 'contact') { 
-        query.populate('photo');
-    }
-
-    if (entity == 'institute') { 
-        query.populate('photo');
-    }
-
-    if (entity == 'vehicle') { 
-        query.populate('photo');
-        query.populate('category');
-    }
-
-    if (entity == 'sale') { 
-        query.populate('branch');
-        query.populate({path:'customer', populate: { path:  'photo', model: 'media' }});
-        query.populate({path:'item', populate: { path:  'photo', model: 'media' }});
-        query.populate({path:'item', populate: { path:  'color', model: 'color' }});                                                                                                                                                                  
-        query.populate({path:'institute', populate: { path:  'logo', model: 'media' }});   
-    }
-
-    if (entity == 'loanrequest') { 
-        query.populate('branch');
-        query.populate({path:'customer', populate: { path:  'photo', model: 'media' }});
-        query.populate({path:'s', populate: { path:  'photo', model: 'media' }});
-        query.populate({path:'item', populate: { path:  'color', model: 'color' }});                                                                                                                                                                  
-        query.populate({path:'institute', populate: { path:  'logo', model: 'media' }});
-    }
-
-    if (entity == 'agiletask') { 
-        query.populate('stage');
-        query.populate('board'); 
-        query.populate('item'); 
-        query.populate('customer'); 
-    }
 }
 
 exports.getNewCouponNumber =async function (req, res, next) {
