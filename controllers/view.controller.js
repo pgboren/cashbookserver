@@ -306,7 +306,7 @@ exports.getViewData = async function (req, res) {
         }
 
         if (req.params.viewName == viewType.DOC_VIEW.value) {
-            await getListItemViewData(req, res);
+            await getDocViewData(req, res);
         }
 
     } catch (err) {
@@ -323,7 +323,8 @@ exports.getListItemViewData = async function (req, res) {
     }
 };
 
-async function getViewData(req, res) {
+
+async function getDocViewData(req, res) {
     const docName = req.params.docname;
     const docModelClass = mongoose.model(docName);
     var query = docModelClass.findOne({ _id: req.query.id });
@@ -333,7 +334,7 @@ async function getViewData(req, res) {
             res.status(404).json({ message: `${req.params.docname} with id ${req.params.id} not found` });
         }
         else {
-            var data = createViewData(req.params.docname, model);
+            var data = createDocViewData(req.params.docname, model);
             res.status(200).json(data);
         }
     });
@@ -349,7 +350,7 @@ async function getListItemViewData(req, res) {
             res.status(404).json({ message: `${req.params.docname} with id ${req.params.id} not found` });
         }
         else {
-            var data = createViewData(req.params.docname, model);
+            var data = createListViewData(req.params.docname, model);
             res.status(200).json(data);
         }
     });
@@ -364,11 +365,10 @@ async function getListViewData(req, res) {
             populate: getPopulateField(req.params.docname),
             limit: limit
         };
-
-        const result = await docModel.paginate({}, options);
+        const result = await docModel.paginate(filter, options);
         const docs = [];
         result.docs.forEach(model => {
-            var doc = createViewData(req.params.docname, model);
+            var doc = createListViewData(req.params.docname, model);
            docs.push(doc);
         });
 
@@ -399,7 +399,47 @@ function getPopulateField(docName) {
 
 }
 
-function createViewData(docName, doc) {
+function createDocViewData(docName, doc) {
+    var data = null;
+
+    if (docName == 'item') {
+        data = createItemViewData(docName, doc);
+    }
+    
+    return data;
+}
+
+function createItemViewData(docName, doc) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc.id;
+    viewDocSnapshot.docClassName = docName;
+    var general = {label:"general", dataType: "GROUP", type: "GROUP", editTable: false, viewType: null};     
+    general.childrent  = {
+        name: { label: "name", value:doc.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
+        category: { label: "category", value:doc.category.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
+        account: { label: "account", value:doc.account.number + ' : ' + doc.account.name , dataType: "STRING", type:"DATA", viewType: 'TEXT'},
+        price:  {label: "price", value:doc.price, dataType: "CURRENCY",type:"DATA", locale: "US", viewType: 'CURRENCY'},
+        cost:  {label: "cost", value:doc.cost, dataType: "CURRENCY",type:"DATA", locale: "US", viewType: 'CURRENCY'},
+        description:  {label: "description", value:doc.description, dataType: "STRING",type:"DATA", viewType: 'TEXT'}, 
+        isInventory:  {label: "isInventory", value:doc.isInventory , dataType: "BOOLEAN",type:"DATA", viewType: 'BOOLEAN'},
+        account:  {label: "account", value:doc.account._id, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
+        enable:  {label: "enable", value:doc.enable, dataType: "BOOLEAN",type:"DATA", viewType: 'BOOLEAN'},
+    };
+
+    var specificationGroup = {label:"specification", dataType: "GROUP", type: "GROUP", editTable: true, viewType: 'DROP_DROP_LIST_BOTTOM_SHEET'};    
+    
+    specificationGroup.childrent = {};
+    doc.specifications.forEach(function(specification) {
+        specificationGroup.childrent[specification.name] = {label: specification.name, value:specification.value, dataType: "STRING",type:"DATA"} ;
+    });
+
+    viewDocSnapshot.data = {general: general, specifications : specificationGroup };
+
+    return viewDocSnapshot;
+}
+
+
+function createListViewData(docName, doc) {
     var data = null;
 
     if (docName == 'contact') {
@@ -408,6 +448,11 @@ function createViewData(docName, doc) {
 
     if (docName == 'item') {
         data = createItemListViewData(docName, doc);
+    }
+
+    if (docName == 'itemspecification') {
+        
+        data = createItemSpecificationListViewData(docName, doc);
     }
     
     if (docName == 'account') {
@@ -497,34 +542,31 @@ function createAccountViewData(docName, doc) {
     return viewDocSnapshot;
 }
 
+function createItemSpecificationListViewData(docName,doc) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc.id;
+    viewDocSnapshot.docClassName = docName;
+    var general = {label:"general", dataType: "GROUP", type: "GROUP"};    
+    viewDocSnapshot.data  = {
+        name: { label: "name", value:doc.name, dataType: "STRING",type:"DATA"},
+        value: { label: "value", value:doc.value, dataType: "STRING",type:"DATA"},
+        item: { label: "item", value:doc.item, dataType: "STRING",type:"DATA"},
+        order: { label: "order", value:doc.order, dataType: "NUMBER",type:"DATA"},
+    };
+    return viewDocSnapshot;
+}
+
 function createItemListViewData(docName, doc) {
     var viewDocSnapshot = {};
     viewDocSnapshot._id = doc.id;
-    
     viewDocSnapshot.docClassName = docName;
-
     var general = {label:"general", dataType: "GROUP", type: "GROUP"};    
-    
-    general.childrent  = {
+    viewDocSnapshot.data  = {
         name: { label: "name", value:doc.name, dataType: "STRING",type:"DATA"},
         category: { label: "category", value:doc.category.name, dataType: "STRING",type:"DATA"},
         account: { label: "account", value:doc.account.number + ' : ' + doc.account.name , dataType: "STRING",type:"DATA"},
         price:  {label: "price", value:doc.price, dataType: "CURRENCY",type:"DATA", locale: "US"},
-        cost:  {label: "cost", value:doc.cost, dataType: "CURRENCY",type:"DATA", locale: "US"},
-        description:  {label: "description", value:doc.description, dataType: "STRING",type:"DATA"},
-        isInventory:  {label: "isInventory", value:doc.isInventory , dataType: "BOOLEAN",type:"DATA"},
-        account:  {label: "account", value:doc.account._id, dataType: "STRING",type:"DATA"},
-        enable:  {label: "enable", value:doc.enable, dataType: "BOOLEAN",type:"DATA"},
     };
-
-    var specificationGroup = {label:"specification", dataType: "GROUP", type: "GROUP"};    
-    
-    specificationGroup.childrent = {};
-    doc.specifications.forEach(function(specification) {
-        specificationGroup.childrent[specification.name] = {label: specification.name, value:specification.value, dataType: "STRING",type:"DATA"} ;
-    });
-
-    console.log(specificationGroup);
     return viewDocSnapshot;
 }
 

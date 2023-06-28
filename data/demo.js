@@ -286,13 +286,30 @@ function createItem(name, cat, acct) {
     item.account = acct;
     item.specifications = [];
     
-    specification = new Itemspecification();;
-    specification.name = 'color';
-    specification.value = 'red';
-    specification.item = item;
-    specification.order = 0;
-    specification.save();
-    item.specifications.push(specification);
+    var colorSpec = new Itemspecification();;
+    colorSpec.name = 'color';
+    colorSpec.value = 'red';
+    colorSpec.item = item;
+    colorSpec.order = 0;
+    colorSpec.save();
+    item.specifications.push(colorSpec);
+
+    var chassisNumber = new Itemspecification();
+    chassisNumber.name = 'chassisNumber';
+    chassisNumber.value = 'FB110M0007729';
+    chassisNumber.item = item;
+    chassisNumber.order = 0;
+    chassisNumber.save();
+    item.specifications.push(chassisNumber);
+
+    var machineNumber = new Itemspecification();
+    machineNumber.name = 'machineNumber';
+    machineNumber.value = 'FB110M0007729';
+    machineNumber.item = item;
+    machineNumber.order = 0;
+    machineNumber.save();
+    item.specifications.push(machineNumber);
+
     item.save();
     
 }
