@@ -363,7 +363,8 @@ async function getListViewData(req, res) {
         const options = {
             page: parseInt(req.query.page) || 1,
             populate: getPopulateField(req.params.docname),
-            limit: limit
+            limit: limit,
+            sort: orders
         };
         const result = await docModel.paginate(filter, options);
         const docs = [];
@@ -426,8 +427,7 @@ function createItemViewData(docName, doc) {
         enable:  {label: "enable", value:doc.enable, dataType: "BOOLEAN",type:"DATA", viewType: 'BOOLEAN'},
     };
 
-    var specificationGroup = {label:"specification", dataType: "GROUP", type: "GROUP", editTable: true, viewType: 'DROP_DROP_LIST_BOTTOM_SHEET'};    
-    
+    var specificationGroup = {label:"specification", dataType: "GROUP", type: "GROUP", editTable: true, viewType: 'DROP_DROP_LIST_BOTTOM_SHEET', docName: 'item', docId: doc._id }; 
     specificationGroup.childrent = {};
     doc.specifications.forEach(function(specification) {
         specificationGroup.childrent[specification.name] = {label: specification.name, value:specification.value, dataType: "STRING",type:"DATA"} ;
