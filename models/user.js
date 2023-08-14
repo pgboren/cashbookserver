@@ -4,7 +4,6 @@ const User = mongoose.model("User",
   new mongoose.Schema({
     username: String,
     email: String,
-    branch: {type: mongoose.Schema.Types.ObjectId, ref: 'branch'},
     password: String,
     roles: [
       {

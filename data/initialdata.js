@@ -1,17 +1,24 @@
 const db = require('../models');
 let mongoose = require('mongoose');
 
+var jwt = require("jsonwebtoken");
+var bcrypt = require("bcryptjs");
+const doc = require('pdfkit');
+
+const DocumentClass = db.documentClass;
 const Role = db.role;
+const User = db.user;
 const AccountType = db.accounttype;
 const Account = db.account;
 const Color = db.color;
 const Counter = db.counter;
+const Institute = db.institute;
 
 module.exports = function(app) {
 	console.log("Initial User Roles Data");
 
 	Role.estimatedDocumentCount({})
-  .then((count) => {
+  	.then((count) => {
     
 	  if (count === 0) {
 
@@ -35,9 +42,10 @@ module.exports = function(app) {
 		  console.log("added 'moderator' to roles collection");
 		});
   
-		new Role({
+		var adminRole = new Role({
 		  name: "admin"
-		}).save(err => {
+		});
+		adminRole.save(err => {
 		  if (err) {
 			console.log("error", err);
 		  }
@@ -45,6 +53,21 @@ module.exports = function(app) {
 		  console.log("added 'admin' to roles collection");
 		});
 
+		const adminUser = new User({
+			username: 'admin',
+			email: 'admin@soleapmotor.com',
+			password: bcrypt.hashSync('admin', 8)
+		  });
+
+		adminUser.roles.push(adminRole);
+		adminUser.save(err => {
+			if (err) {
+			  console.log("error", err);
+			}
+	
+			console.log("added 'admin' to users collection");
+		  });
+		
 		new Role({
 			name: "manager"
 		  }).save(err => {
@@ -79,11 +102,12 @@ module.exports = function(app) {
 	
   })
   .catch((err) => {
-    // Handle the error
+	console.log("error", err);
   });
 
     
 	console.log("Initial Account Type and Account Data");
+
 
 	AccountType.estimatedDocumentCount({})
   .then((count) => {
@@ -128,6 +152,8 @@ module.exports = function(app) {
 					
 	}
 
+	createInstitutes();
+
   })
   .catch((err) => {
     // Handle the error
@@ -151,6 +177,55 @@ module.exports = function(app) {
   });
 
 
+  DocumentClass.estimatedDocumentCount({})
+  .then((count) => {
+    if (count === 0) {
+		var vehicleClass = createDocumentClass('VEHICLE', 'Vehicle');
+		vehicleClass.fields.push(createDocumentField('photo', 'Photo', null));
+		vehicleClass.fields.push(createDocumentField('barcode', 'String', null));
+		vehicleClass.fields.push(createDocumentField('name', 'String', null));
+		vehicleClass.fields.push(createDocumentField('account', 'Document', 'account'));
+		vehicleClass.fields.push(createDocumentField('description', 'String', null));
+		vehicleClass.fields.push(createDocumentField('price', 'double', null));
+		vehicleClass.fields.push(createDocumentField('cost', 'double', null));
+		vehicleClass.fields.push(createDocumentField('category', 'Document', 'category'));
+		vehicleClass.fields.push(createDocumentField('make', 'String', null));
+		vehicleClass.fields.push(createDocumentField('model', 'String', null));
+		vehicleClass.fields.push(createDocumentField('type', 'String', null));
+		vehicleClass.fields.push(createDocumentField('condition', 'String', null));
+		vehicleClass.fields.push(createDocumentField('chassisno', 'String', null));
+		vehicleClass.fields.push(createDocumentField('engineno', 'String', null));
+		vehicleClass.fields.push(createDocumentField('color', 'String', null));
+		vehicleClass.fields.push(createDocumentField('horsepower', 'String', null));
+		vehicleClass.fields.push(createDocumentField('year', 'String', null));
+		vehicleClass.fields.push(createDocumentField('enable', 'Boolean', null));
+		vehicleClass.save();
+	}
+  })
+  .catch((err) => {
+    // Handle the error
+  });
+
+}
+
+function createDocumentField(name, type, multiplicity, format, data, targetDocumentClass, require) {
+	var field = {};
+	field.name = name;
+	field.type = type;
+	field.multiplicity = multiplicity;
+	field.format = format;
+	field.data = data;
+	field.targetDocumentClass = targetDocumentClass; 
+	field.require =  require;
+	return field;
+}
+
+function createDocumentClass(name, className) {
+	var documentClass = new DocumentClass();
+	documentClass.name = name;
+	documentClass.className = className;
+	documentClass.fields = [];
+	return documentClass;
 }
 
 function createColor(name) {   
@@ -180,4 +255,67 @@ function createAccountType(name, debit_effect, credit_effect) {
     accountType.creditEffect = credit_effect;
     accountType.save();
     return accountType;
+}
+
+function createInstitutes() {
+
+   Institute.estimatedDocumentCount({}).then((count) => {
+	  if (count === 0) {
+		console.log('Create institutes'); 
+
+		var institute = new Institute();
+		institute.code = 'WING';
+		institute.name = 'ធនាគារ វីង';
+		institute.latinname = 'Wing Bank';
+		institute.address = 'អគារលេខ 721 មហាវិថីព្រះមុនីវង្ស ភូមិភូមិ 9 សង្កាត់បឹងកេងកងទី 3 ខណ្ឌបឹងកេងកង រាជធានីភ្នំពេញ';
+		institute.logo = '64b7ec4a0a8fb90838d5dceb';
+		institute.save();
+		
+		var institute = new Institute();
+		institute.code = 'KK';
+		institute.name = 'ខេ ខេ ហ្វាន់';
+		institute.latinname = 'KK FUND LEASING PLC';
+		institute.address = 'ផ្ទះលេខ 69-71 ផ្លូវ 271 សង្កាត់ទំនប់ទឹក ខណ្ឌ បឹងកេងកង រាជធានីភ្នំពេញ';
+		institute.logo = '64b7ec330a8fb90838d5dce1';
+		institute.save();
+
+		institute = new Institute();
+		institute.code = 'CL';
+		institute.name = 'ឆាយលីស';
+		institute.latinname = 'Chailease Royal Leasing Plc';
+		institute.address = 'គារ ២១៦បេ ជាន់ទី៣ មហាវិថីព្រះនរោត្ដម (៤១) សង្កាត់ទន្លេបាសាក់ ខណ្ឌចំការមន ភ្នំពេញ';
+		institute.logo = '64b7ec3c0a8fb90838d5dce5';
+		institute.save();
+
+		institute = new Institute();
+		institute.code = 'AP';
+		institute.name = 'អាក់ទីវភីភល';
+		institute.latinname = ' Active People';
+		institute.address = 'អាគារលេខ៨៨ ផ្លូវលេខ២១៤ កែងនឹងផ្លូវលេខ១១៣ សង្កាត់បឹងព្រលិត ខណ្ឌ៧មករា រាជធានីភ្នំពេញ';
+		institute.logo = '64b7ec410a8fb90838d5dce7';
+		institute.save();
+
+		institute = new Institute();
+		institute.code = 'GLF';
+		institute.name = 'ជីអិល';
+		institute.latinname = 'GL Finance PLC';
+		institute.address = 'អាគាលេខ 270, 274 ផ្លូវកម្ពុជាក្រោម សង្កាត់មិត្តភាព ខណ្ឌ៧មករា រាជធានីភ្នំពេញ';
+		institute.logo = '64b7ec380a8fb90838d5dce3';	
+		institute.save();
+
+		institute = new Institute();
+		institute.code = 'AMK';
+		institute.name = 'អេ​ អឹម ខេ';
+		institute.latinname = 'AMK Microfinance Institution PLC';
+		institute.address = 'អគារលេខ ២៨៥  មហាវិថីយុទ្ធពលខេមរៈភូមិន្ទ (ផ្លូវ ២៧១) ​ សង្កាត់ទំនប់ទឹក  ខណ្ឌបឹងកេងកង រាជធានីភ្នំពេញ';
+		institute.logo = '64b7ec450a8fb90838d5dce9';	
+		institute.save();
+
+	  }	
+  })
+  .catch((err) => {
+	console.log("error", err);
+  });
+
+	
 }

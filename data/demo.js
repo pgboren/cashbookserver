@@ -8,6 +8,8 @@ const Account = db.account;
 const Institute = db.institute;
 const Invoice = db.invoice;
 const Loan = db.loan;
+const Vehicle = db.vehicle;
+
 const Itemspecification = db.itemspecification;
 
 module.exports = function(app) {
@@ -247,19 +249,19 @@ function createItems() {
             Account.findOne({ 'number': 102 })
             .then((result) => {
                 var account = result;
-                createItem('Honda Dream 125CC 2023 - Black', category._id, account._id);
-                createItem('Honda Dream 125CC 2023 - Red', category._id, account._id);
-                createItem('Honda Dream 125CC 2023 - White', category._id, account._id);
-                createItem('Honda Scoopy 110CC 2023 - Black', category._id, account._id);
-                createItem('Honda Scoopy 110CC 2023 - Red', category._id, account._id);
-                createItem('Honda Scoopy 110CC 2023 - White', category._id, account._id);
-                createItem('Honda Scoopy 110CC 2022 - Black', category._id, account._id);
-                createItem('Honda Scoopy 110CC 2022 - White', category._id, account._id);
-                createItem('Honda Scoopy 110CC 2022 - Red', category._id, account._id);
-                createItem('Honda Beat 110CC 2022 - Blue', category._id, account._id);
-                createItem('Honda Beat 110CC 2022 - Red', category._id,account._id);
-                createItem('Honda Drea 125CC 2020 - Red', category._id, account._id);
-                createItem('Honda Drea 125CC 2020 - Red', category._id, account._id);
+                createVehicle('Honda Dream 125CC 2023 - Black', '1234567890', category._id, account._id, 'NEW', 'HONDA', 'DREAM', 'OFF_ROAD');
+                createVehicle('Honda Dream 125CC 2023 - Red', '1234567892', category._id, account._id,'NEW', 'HONDA', 'DREAM', 'OFF_ROAD');
+                createVehicle('Honda Dream 125CC 2023 - White', '1234567893', category._id, account._id, 'NEW'), 'HONDA', 'DREAM', 'OFF_ROAD';
+                createVehicle('Honda Scoopy 110CC 2023 - Black', '1234567894', category._id, account._id, 'NEW', 'HONDA', 'Scoopy', 'SCOOTER');
+                createVehicle('Honda Scoopy 110CC 2023 - Red', '1234567895', category._id, account._id, 'NEW', 'HONDA', 'Scoopy', 'SCOOTER');
+                createVehicle('Honda Scoopy 110CC 2023 - White', '1234567896', category._id, account._id, 'NEW', 'HONDA', 'Scoopy', 'SCOOTER');
+                createVehicle('Honda Scoopy 110CC 2022 - White', '1234567897', category._id, account._id, 'NEW'), 'HONDA', 'Scoopy', 'SCOOTER';
+                createVehicle('Honda Scoopy 110CC 2022 - Red', '1234567898', category._id, account._id, 'USED', 'HONDA', 'Scoopy', 'SCOOTER');
+                createVehicle('Honda Beat 110CC 2022 - Blue', '1234567899', category._id, account._id, 'USED', 'HONDA', 'Beat', 'SCOOTER');
+                createVehicle('Honda Beat 110CC 2022 - Red', '1234567810', category._id,account._id, 'USED', 'HONDA', 'Beat', 'SCOOTER');
+                createVehicle('Honda Dream 125CC 2020 - Red', '1234567811', category._id, account._id, 'SECOND_HAND', 'HONDA', 'DREAM', 'OFF_ROAD');
+                createVehicle('Honda Dream 125CC 2020 - Red', '1234567812', category._id, account._id, 'SECOND_HAND', 'HONDA', 'DREAM', 'OFF_ROAD');
+                createVehicle('Honda Scoopy 110CC 2022 - Black', '1234567813', category._id, account._id, 'SECOND_HAND', 'HONDA', 'Scoopy', 'SCOOTER');
             })
             .catch((err) => {
                 // Handle the error
@@ -269,47 +271,31 @@ function createItems() {
     .catch((err) => {
         // Handle the error
     });
-
-
 }
 
-function createItem(name, cat, acct) {  
-    console.log('Create new Item: ' + name);
+function createVehicle(name, barcode, cat, acct, con, make, model, type) {  
+    console.log('Create new Vehicle: ' + name);
     
-    var item = new Item();
+    var item = new Vehicle();
     item.name = name;
+    item.barcode = barcode;
     item.price = 2050;
     item.cost = 2000;
     item.description = 'item testing description';
-    item.isInventory = true;
+    item.isInventory = true; 
     item.category = cat;
     item.account = acct;
-    item.specifications = [];
-    
-    var colorSpec = new Itemspecification();;
-    colorSpec.name = 'color';
-    colorSpec.value = 'red';
-    colorSpec.item = item;
-    colorSpec.order = 0;
-    colorSpec.save();
-    item.specifications.push(colorSpec);
-
-    var chassisNumber = new Itemspecification();
-    chassisNumber.name = 'chassisNumber';
-    chassisNumber.value = 'FB110M0007729';
-    chassisNumber.item = item;
-    chassisNumber.order = 0;
-    chassisNumber.save();
-    item.specifications.push(chassisNumber);
-
-    var machineNumber = new Itemspecification();
-    machineNumber.name = 'machineNumber';
-    machineNumber.value = 'FB110M0007729';
-    machineNumber.item = item;
-    machineNumber.order = 0;
-    machineNumber.save();
-    item.specifications.push(machineNumber);
-
+    item.make = make;
+    item.model = model;
+    item.type = type;
+    item.chassisno = 'FB110M0007729';
+    item.engineno = 'FB110M0007729'
+    item.color = 'ខ្មៅ'
+    item.horsepower = '150cc';
+    item.condition = con;
+    item.year = 2018;
+    item.photo = '64b7ec330a8fb90838d5dce1';
+    item.enable = true;
     item.save();
     
 }

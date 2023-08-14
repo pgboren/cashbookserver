@@ -13,9 +13,7 @@ exports.createDoc = async (req, res) => {
     const entity = req.params.entity;
     const Model = mongoose.model(entity);
     const data = req.body;
-
     try {
-        // Check if there are any validation errors
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(422).json({ errors: errors.array() });
@@ -26,7 +24,7 @@ exports.createDoc = async (req, res) => {
         return res.status(201).json({ id: savedModel._id });
 
     } catch (error) {
-        // Handle duplicate key error
+        console.log(error);
         if (error.code === 11000) {
             const key = Object.keys(error.keyValue)[0];
             const value = Object.values(error.keyValue)[0];

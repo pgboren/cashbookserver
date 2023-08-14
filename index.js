@@ -8,6 +8,7 @@ const fileUpload = require('express-fileupload');
 const multer  = require('multer');
 const moment= require('moment') 
 require('moment-timezone') 
+const cors = require('cors');
 
 const Media = require('./models/media');
 const util = require('util');
@@ -15,7 +16,7 @@ var media = require('./controllers/media.controller');
 
 const demo = require('./data/demo');
 const initialdata = require('./data/initialdata');
-
+const mrz = require('machine-readable-zone');
 
 const db = require('./models');
 const Role = db.role;
@@ -67,6 +68,8 @@ else {
 	demo();
 	console.log("Db connected successfully");
 }
+
+app.use(cors());
 
 app.use(bodyParser.urlencoded({
 	extended: true
