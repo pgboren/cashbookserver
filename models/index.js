@@ -13,6 +13,9 @@ db.role = require("./role");
 db.accounttype = require("./accounttype");
 db.account = require("./account");
 db.category = require("./category");
+db.maker = require("./maker");
+db.vehicle = require("./vehicle");
+
 db.contact = require("./contact");
 db.item = require("./item");
 db.invoice = require("./invoice");
@@ -21,7 +24,7 @@ db.counter = require("./counter");
 db.loan = require("./loan");
 db.media = require("./media");
 db.institute = require("./institute");
-db.vehicle = require("./vehicle");
+
 
 db.ROLES = ["user", "admin", "moderator", "manager", "co", "saler"];
 

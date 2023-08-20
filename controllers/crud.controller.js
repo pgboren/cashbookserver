@@ -9,16 +9,70 @@ const path = require('path');
 const mongoose = require('mongoose');
 const config = require('config');
 
+function replaceAll(str, find, replace) {
+	return str.replace(new RegExp(escapeRegExp(find), 'g'), replace);
+}
+
+function escapeRegExp(string) {
+	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+exports.createDocWithFile = async (req, res) => {
+    const entity = req.params.entity;
+    const Model = mongoose.model(entity);
+    const data = JSON.parse(req.body.json);
+    try {
+        file = req.file;
+        var media = null;
+		if (file != null) {
+			const { originalname, size, mimetype, path} = file;
+			var logicalPath = replaceAll(path, '\\', '/');
+            logicalPath = replaceAll(logicalPath, 'public/', '');
+			var file_name = Date.now() +'_'+ originalname;
+            const Media = mongoose.model("media");
+			media = await Media.create({
+				name: file_name,
+				size: size,
+				mimetype: mimetype,
+				path: logicalPath
+			});
+		}
+        const errors = validationResult(data);
+        if (!errors.isEmpty()) {
+            return res.status(422).json({ errors: errors.array() });
+        }
+        const model = new Model(data);
+        if (media != null) {
+            model.photo = media;
+        }
+
+        const savedModel = await model.save();
+        return res.status(201).json({ id: savedModel._id });
+
+    } catch (error) {
+        console.log(error);
+        if (error.code === 11000) {
+            const key = Object.keys(error.keyValue)[0];
+            const value = Object.values(error.keyValue)[0];
+            return res.status(409).json({
+                error: `The ${key}: '${value}' is already in use by another ${entity}.`,
+            });
+        }
+
+        // Handle other errors
+        return res.status(500).json({ error: error.message });
+    }
+};
+
 exports.createDoc = async (req, res) => {
     const entity = req.params.entity;
     const Model = mongoose.model(entity);
     const data = req.body;
     try {
-        const errors = validationResult(req);
+        const errors = validationResult(data);
         if (!errors.isEmpty()) {
             return res.status(422).json({ errors: errors.array() });
         }
-
         const model = new Model(data);
         const savedModel = await model.save();
         return res.status(201).json({ id: savedModel._id });

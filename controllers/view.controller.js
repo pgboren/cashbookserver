@@ -398,9 +398,15 @@ async function getListViewData(req, res) {
 }
 
 function getPopulateField(docName) {
+
+    if (docName == 'maker') {
+        return ["photo"];
+
+    }
+
     if (docName == 'account') {
         return ["type"];
-    
+
     }
 
     if (docName == 'vehicle') {
@@ -428,6 +434,10 @@ function getPopulateField(docName) {
 function createDocViewData(docName, doc) {
     var data = null;
 
+    if (docName == 'maker') {
+        data = createNamePhotoViewData(docName, doc);
+    }
+
     if (docName == 'item') {
         data = createItemViewData(docName, doc);
     }
@@ -445,6 +455,39 @@ function createDocViewData(docName, doc) {
     }
     
     return data;
+}
+
+function createNameViewData(docName, doc) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc.id;
+    viewDocSnapshot.docClassName = docName;
+    var photo = doc.photo ? doc.photo.path : null;
+    var general = {label:"general", dataType: "GROUP", type: "GROUP", editTable: false, viewType: null};     
+    general.childrent  = {
+        name: { label: "name", value:doc.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
+        enable:  {label: "enable", value:doc.enable, dataType: "BOOLEAN",type:"DATA", viewType: 'BOOLEAN'},
+    };
+
+    viewDocSnapshot.data = {general: general};
+
+    return viewDocSnapshot;
+}
+
+function createNamePhotoViewData(docName, doc) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc.id;
+    viewDocSnapshot.docClassName = docName;
+    var photo = doc.photo ? doc.photo.path : null;
+    var general = {label:"general", dataType: "GROUP", type: "GROUP", editTable: false, viewType: null};     
+    general.childrent  = {
+        name: { label: "name", value:doc.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
+        photo: { label: "photo", lableVisible: false,  value:photo, dataType: "PHOTO",type:"DATA", action: "PHOTO_VIEW"},
+        enable:  {label: "enable", value:doc.enable, dataType: "BOOLEAN",type:"DATA", viewType: 'BOOLEAN'},
+    };
+
+    viewDocSnapshot.data = {general: general};
+
+    return viewDocSnapshot;
 }
 
 function createContactViewData(docName, doc) {
@@ -543,7 +586,6 @@ function createItemViewData(docName, doc) {
     return viewDocSnapshot;
 }
 
-
 function createItemViewData(docName, doc) {
     var viewDocSnapshot = {};
     viewDocSnapshot._id = doc.id;
@@ -571,6 +613,14 @@ function createItemViewData(docName, doc) {
 function createListViewData(docName, doc) {
     var data = null;
 
+    if (docName == 'category') {
+        data = createNameListItemViewData(docName, doc);
+    }
+
+    if (docName == 'maker') {
+        data = createNamePhotoListItemViewData(docName, doc);
+    }
+
     if (docName == 'contact') {
         data = createContactListItemViewData(docName, doc);
     }
@@ -594,10 +644,6 @@ function createListViewData(docName, doc) {
 
     if (docName == 'accounttype') {
         data = createAccountTypeListItemViewData(docName, doc);
-    }
-
-    if (docName == 'category') {
-        data = createNameListItemViewData(docName, doc);
     }
 
     if (docName == 'institute') {
@@ -721,7 +767,6 @@ function createVehicleListItemViewData(docName, doc) {
     return viewDocSnapshot;
 }
 
-
 function createItemListItemViewData(docName, doc) {
     var viewDocSnapshot = {};
     viewDocSnapshot._id = doc.id;
@@ -782,17 +827,40 @@ function createInstituteListItemViewData(docName, doc) {
     return viewDocSnapshot;
 }
     
+function createNamePhotoListItemViewData(docName, doc) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc._id;
+    viewDocSnapshot.docClassName = docName;
+    var photo = doc.photo ? doc.photo.path : null;
+    viewDocSnapshot.data  = {
+        photo: { label: "photo",  value:photo, dataType: "PHOTO",type:"DATA"},
+        name:{label: "name", value:doc.name, dataType: "STRING",type:"DATA"},
+        
+    };
+    return viewDocSnapshot;
+}
+
 function createNameListItemViewData(docName, doc) {
     var viewDocSnapshot = {};
     viewDocSnapshot._id = doc._id;
     viewDocSnapshot.docClassName = docName;
+
     viewDocSnapshot.data  = {
         name:{label: "name", value:doc.name, dataType: "STRING",type:"DATA"}
     };
     return viewDocSnapshot;
 }
 
-
+function createLatinNameListItemViewData(docName, doc) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc._id;
+    viewDocSnapshot.docClassName = docName;
+    viewDocSnapshot.data  = {
+        name:{label: "name", value:doc.name, dataType: "STRING",type:"DATA"},
+        latinname:{label: "latinname", value:doc.latinname, dataType: "STRING",type:"DATA"}
+    };
+    return viewDocSnapshot;
+}
 
 function createTypeDocumentSnapshot(entity, model) {
     var doc = {};
