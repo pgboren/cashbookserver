@@ -401,7 +401,6 @@ function getPopulateField(docName) {
 
     if (docName == 'maker') {
         return ["photo"];
-
     }
 
     if (docName == 'account') {
@@ -410,7 +409,7 @@ function getPopulateField(docName) {
     }
 
     if (docName == 'vehicle') {
-        return ["account", "category", "specifications", "photo"];
+        return ["account", "category", "specifications", "photo", "maker", "type", "condition", "model", "color"];
      }
 
     if (docName == 'item') {
@@ -516,6 +515,8 @@ function createContactViewData(docName, doc) {
 }
 
 function createVehicleViewData(docName, doc) {
+
+    console.log(doc);
     var viewDocSnapshot = {};
     viewDocSnapshot._id = doc.id;
     viewDocSnapshot.docClassName = docName;
@@ -541,16 +542,15 @@ function createVehicleViewData(docName, doc) {
 
     var vehicle = {label:"vehicle", dataType: "GROUP", type: "GROUP", editTable: false, viewType: null};     
     vehicle.childrent  = {
-        type: { label: "type", value:doc.type, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        make: { label: "make", value:doc.make, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        model: { label: "model", value:doc.model, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        type: { label: "type", value:doc.type, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        condition: { label: "condition", value:doc.condition, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
+        maker: { label: "maker", value:doc.maker.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
+        type: { label: "type", value:doc.type.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
+        model: { label: "model", value:doc.model.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
         chassisno: { label: "chassisno", value:doc.chassisno, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
         engineno: { label: "engineno", value:doc.engineno, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        color: { label: "color", value:doc.color, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
+        color: { label: "color", value:doc.color.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
         horsepower: { label: "horsepower", value:doc.horsepower, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
         year: { label: "production_year", value:doc.year.toString(), dataType: "STRING",type:"DATA", viewType: 'TEXT'},
+        condition: { label: "condition", value:doc.condition.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
     };
 
     var data = {photo: photo, general: general, price: price, vehicle: vehicle};
@@ -617,8 +617,29 @@ function createListViewData(docName, doc) {
         data = createNameListItemViewData(docName, doc);
     }
 
+    if (docName == 'model') {
+        data = createNameWithKeyListItemViewData(docName, doc);
+    }
+
+
+    if (docName == 'type') {
+        data = createNameWithKeyListItemViewData(docName, doc);
+    }
+
+    if (docName == 'condition') {
+        data = createNameWithKeyListItemViewData(docName, doc);
+    }
+
+    if (docName == 'model') {
+        data = createNameWithKeyListItemViewData(docName, doc);
+    }
+
+    if (docName == 'color') {
+        data = createNameWithKeyListItemViewData(docName, doc);
+    }
+
     if (docName == 'maker') {
-        data = createNamePhotoListItemViewData(docName, doc);
+        data = createNameWithKeyListItemViewData(docName, doc);
     }
 
     if (docName == 'contact') {
@@ -654,9 +675,7 @@ function createListViewData(docName, doc) {
         data = createInvoiceListItemViewData(docName, doc);
     }
 
-    if (docName == 'color') {
-        data = createNameListItemViewData(docName, doc);
-    }
+    
 
     if (docName == 'loan') {
         data = createLoanListItemViewData(docName, doc);
@@ -850,6 +869,18 @@ function createNameListItemViewData(docName, doc) {
     };
     return viewDocSnapshot;
 }
+
+function createNameWithKeyListItemViewData(docName, doc) {
+    var viewDocSnapshot = {};
+    viewDocSnapshot._id = doc._id;
+    viewDocSnapshot.docClassName = docName;
+    viewDocSnapshot.data  = {
+        name:{label: "name", value:doc.name, dataType: "STRING",type:"DATA"},
+        key:{label: "key", value:doc.key, dataType: "STRING",type:"DATA"}
+    };
+    return viewDocSnapshot;
+}
+
 
 function createLatinNameListItemViewData(docName, doc) {
     var viewDocSnapshot = {};

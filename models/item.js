@@ -12,12 +12,15 @@ const itemSchema = mongoose.Schema({
     cost: {type:Number, require:true},
     category: {type: mongoose.Schema.Types.ObjectId, ref: 'category'},    
     qty: {type:Number, require:true, default:0 },
-    vehiclemake: { type: String, required: false},
-    vehicleChassisNo: { type: String, required: false},
-    vehicleengineNo: { type: String, required: false},
-    vehiclecolor: { type: String, required: false},
-    vehiclehorsepower: {type: Number,min: 0},
-    vehicleyear: {type:Number, require:true},
+    maker: {type: mongoose.Schema.Types.ObjectId, ref: 'maker'},    
+    type: {type: mongoose.Schema.Types.ObjectId, ref: 'type'},    
+    condition: {type: mongoose.Schema.Types.ObjectId, ref: 'condition'},    
+    color: {type: mongoose.Schema.Types.ObjectId, ref: 'color'},    
+    model: {type: mongoose.Schema.Types.ObjectId, ref: 'model'},    
+    chassisNo: { type: String, required: false},
+    engineno: { type: String, required: false},
+    horsepower: {type: Number,min: 0},
+    year: {type:Number, require:true},
     enable: {type:Boolean, required:true, default:true}
 });
 

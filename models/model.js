@@ -1,11 +1,11 @@
 var mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate-v2');
 // Setup schema
-var makerSchema = mongoose.Schema({
+var modelSchema = mongoose.Schema({
     name: { type: String, required: true, unique: true },
     key: { type: String, required: true, unique: true },
     enable: {type:Boolean,  required:true, default:false }
 });
 
-makerSchema.plugin(mongoosePaginate);
-module.exports = mongoose.model('maker', makerSchema);
+modelSchema.plugin(mongoosePaginate);
+module.exports = mongoose.model('model', modelSchema);

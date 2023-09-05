@@ -177,6 +177,83 @@ module.exports = function(app) {
   });
 
 
+  db.maker.estimatedDocumentCount({})
+  .then((count) => {
+    if (count === 0) {
+		createRefDoc('maker', 'Honda NCX', 'HONDA_NCX');
+		createRefDoc('maker', 'Honda (Thai)', 'HONDA_THAI');
+		createRefDoc('maker', 'Suzuki', 'SUZUKI');
+		createRefDoc('maker', 'Yamaha', 'YAMAHA');
+	}
+  })
+  .catch((err) => {
+    // Handle the error
+  });
+
+  db.type.estimatedDocumentCount({})
+  .then((count) => {
+    if (count === 0) {
+		createRefDoc('type', 'Off-Road', 'OFF_ROAD');
+		createRefDoc('type', 'Scooter', 'SCOOTER');
+		createRefDoc('type', 'Sport', 'SPORT');
+	}
+  })
+  .catch((err) => {
+    // Handle the error
+  });
+
+  db.condition.estimatedDocumentCount({})
+  .then((count) => {
+    if (count === 0) {
+		createRefDoc('condition', 'NEW', 'NEW');
+		createRefDoc('condition', 'USED', 'USED');
+		createRefDoc('condition', 'SECONDHAND', 'SECONDHAND');
+	}
+  })
+  .catch((err) => {
+    // Handle the error
+  });
+
+  
+  db.model.estimatedDocumentCount({})
+  .then((count) => {
+    if (count === 0) {
+		createRefDoc('model', 'Scoopy Prestige','SCOOPY_PRESTIGE');
+		createRefDoc('model', 'Dream','DREAM');
+		createRefDoc('model', 'Wave110','WAVE110');
+		createRefDoc('model', 'Scoopy Club12','SCOOPY_CLUB12');
+		createRefDoc('model', 'PCX','PCX');
+		createRefDoc('model', 'Beat','BEAT');
+		createRefDoc('model', 'Zoomer-X','ZOOMER_X');
+		createRefDoc('model', 'Click125','CLICK125');
+		createRefDoc('model', 'Click160','CLICK160');
+		createRefDoc('model', 'ADV','ADV');
+		createRefDoc('model', 'CB','CB');
+		createRefDoc('model', 'CBR','CBR');
+		createRefDoc('model', 'MSX','MSX');
+		createRefDoc('model', 'MX King','MX_KING');
+		createRefDoc('model', 'MT-15','MT_15');
+		createRefDoc('model', 'FZ-F1','FZ_F1');
+		createRefDoc('model', 'AEROX','AEROX');
+		createRefDoc('model', 'X-RIDE','X_RIDE');
+		createRefDoc('model', 'Q-BIX','Q_BIX');
+		createRefDoc('model', 'Grand Filano','GRAND_FILANO');
+		createRefDoc('model', "Let's",'LET_S');
+		createRefDoc('model', 'Nex','NEX');
+		createRefDoc('model', 'Nex Digi','NEX_DIGI');
+		createRefDoc('model', 'Nex II','NEX_II');
+		createRefDoc('model', 'Nex Crossover','NEX_CROSSOVER');
+		createRefDoc('model', 'Smash V','SMASH_V');
+		createRefDoc('model', 'Viva 125','VIVA_125');
+
+		
+	}
+  })
+  .catch((err) => {
+    // Handle the error
+  });
+
+
   DocumentClass.estimatedDocumentCount({})
   .then((count) => {
     if (count === 0) {
@@ -234,6 +311,16 @@ function createColor(name) {
 	color.name = name;
 	color.enable = true;
 	color.save();
+}
+
+function createRefDoc(docName, name, key) {   
+	console.log('Create new ' + docName +  ':' + name);  
+	const Model = mongoose.model(docName);
+	const doc = new Model();
+	doc.name = name;
+	doc.key = key;
+	doc.enable = true;
+	doc.save();
 }
 
 function createAccount(number, name, type, statement) {   
