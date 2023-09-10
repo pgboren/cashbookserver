@@ -11,6 +11,7 @@ const User = db.user;
 const AccountType = db.accounttype;
 const Account = db.account;
 const Color = db.color;
+const Category = db.category;
 const Counter = db.counter;
 const Institute = db.institute;
 
@@ -170,6 +171,21 @@ module.exports = function(app) {
 		createColor('ប្រផេះ');
 		createColor('លឿង');
 		createColor('ទឹកមាស');
+	}
+  })
+  .catch((err) => {
+    // Handle the error
+  });
+
+
+  Category.estimatedDocumentCount({})
+  .then((count) => {
+    if (count === 0) {
+		var category = new Category();
+        category.name = 'ម៉ូតូ';
+		category.key = 'MOTORBIKE';
+        category.enable = true;
+        category.save();
 	}
   })
   .catch((err) => {

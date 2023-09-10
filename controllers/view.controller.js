@@ -718,10 +718,6 @@ function createInvoiceListItemViewData(docName, doc) {
         date: {label: "date", value:dateString, dataType: "STRING",type:"DATA"},
         customer : {label: "contact", value:doc.customer.name, dataType: "STRING",type:"DATA"},
         institute : {label: "institute", value:doc.institute ? doc.institute.name : null, dataType: "STRING",type:"DATA"},
-        item: {label: "item", value:doc.item.name, dataType: "STRING",type:"DATA"},
-        color: {label: "color", value:doc.color.name, dataType: "STRING",type:"DATA"},
-        year: {label: "year", value:doc.year, dataType: "STRING",type:"DATA"},
-        condition: {label: "condition", value:doc.condition, dataType: "RESOURCE_STRING",type:"DATA"},
         paymentoption: {label: "paymentoption", value:doc.paymentoption, dataType: "RESOURCE_STRING",type:"DATA"},
         price:  {label: "price", value:doc.price, dataType: "CURRENCY",type:"DATA", locale: "US"}
     };

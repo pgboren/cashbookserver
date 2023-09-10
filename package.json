@@ -37,6 +37,7 @@
     "pdfkit-table": "^0.1.99",
     "pm2": "^5.2.2",
     "qrcode": "^1.5.3",
+    "string-format": "^2.0.0",
     "vue-router": "^4.2.4"
   },
   "devDependencies": {

@@ -14,7 +14,6 @@ const Media = require('./models/media');
 const util = require('util');
 var media = require('./controllers/media.controller');
 
-const demo = require('./data/demo');
 const initialdata = require('./data/initialdata');
 const mrz = require('machine-readable-zone');
 
@@ -39,7 +38,6 @@ if(!database) {
 }
 else {
 	initialdata();
-	demo();
 	console.log("Db connected successfully");
 }
 
