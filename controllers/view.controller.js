@@ -16,13 +16,14 @@ const moment = require('moment-timezone');
 const Enum = require('enum')
 const util = require('util');
 const fs = require("fs");
-var path = require('path');
-let mongoose = require('mongoose');
+const path = require('path');
+const mongoose = require('mongoose');
 const config = require('config');
 const { Console } = require('console');
 const PDFDocument = require('pdfkit');
-const QRCode = require('qrcode');
+const QRCode  = require('qrcode');
 const Jimp = require('jimp');
+var JsBarcode = require('jsbarcode');
 
 var viewType = new Enum({'LIST_VIEW': 'LIST_VIEW', 'LIST_ITEM_VIEW': 'LIST_ITEM_VIEW', 'DOC_VIEW': 'DOC_VIEW'});
 
@@ -43,6 +44,84 @@ exports.getDocumentClass = async function (req, res) {
     }
 }
 
+exports.nextcounter = async function (req, res) {
+    db.counter.findOne({ id: req.params.id }, function (err, seq) {
+        if (err) {
+          console.error(err);
+          return;
+        }
+        var nextSequenceValue = seq.seq + 1;
+        var result = {};
+        result.id = req.params.id;
+        result.seq = nextSequenceValue;
+        res.status(200).json(result);
+      });
+}
+
+
+exports.generateVehicleLable = async function (req, res) {
+   var query = db.vehicle.findOne({ _id: req.params.id }).populate(['color', 'maker', 'type', 'condition'] );
+    await query.exec(function(err, vehicle) {    
+        createVehicleLablePdfFile(req, res, vehicle);
+    });
+}
+
+function createVehicleLablePdfFieldValue(doc, label, value, post) {
+    doc.fontSize(9);
+    doc.text(label, 10, post + 2);
+    doc.fontSize(11);
+    doc.text(':  ' + value, 135, post);
+}
+
+
+function createVehicleLablePdfFile(req, res, vehicle) {
+
+    var qrValue = { doc: 'VEHICLE', value: vehicle._id };
+
+    let stringdata = JSON.stringify(qrValue);
+    
+    QRCode.toDataURL(stringdata, function (err, imageData) {
+        if (err) throw err;
+        const doc = new PDFDocument({size: [295.2, 417.6], margins: { top: 5, left: 5, right: 5, bottom: 5 }});
+        const fileName = vehicle._id + '.pdf';
+        doc.image(imageData, 97.6, 15, { fit: [100, 100], align: 'center', valign: 'center'});
+        var y = 130;
+        doc.font('public/fonts/arialbd.ttf').fontSize(16);
+        doc.text(vehicle.name,10, y, { align: 'center'});
+        doc.font('public/fonts/khmerossystem.ttf');
+        y += 30;
+        createVehicleLablePdfFieldValue(doc,'លេខតួរ ​/ Chassis Number', vehicle.chassisno, y);
+        y += 25;
+        createVehicleLablePdfFieldValue(doc,'លេខម៉ាស៊ីន ​/ Machine Number', vehicle.engineno, y);
+        y += 25;
+        createVehicleLablePdfFieldValue(doc,'ព៌ណ ​/ Color', vehicle.color.name, y);
+        y += 25;
+        createVehicleLablePdfFieldValue(doc,'កំលាំងម៉ាស៊ីន ​/ Horse power',vehicle.horsepower, y);
+        y += 25;
+        createVehicleLablePdfFieldValue(doc,'អ្នកផលិត ​/ Maker',vehicle.maker.name, y);
+        y += 25;
+        createVehicleLablePdfFieldValue(doc,'ឆ្នាំផលិត ​/ Year',vehicle.year, y);
+        y += 25;
+        createVehicleLablePdfFieldValue(doc,'ប្រភេទ ​/ Type',vehicle.type.name, y);
+        y += 25;
+        createVehicleLablePdfFieldValue(doc,'ស្ថានភាព ​/ Condition',vehicle.condition.name, y);
+        if (vehicle.condition.key == 'SECONDHAND') {
+            y += 25;
+            createVehicleLablePdfFieldValue(doc,'ស្លាកលេខ ​/ Plate Number',vehicle.platenumber, y);
+        }
+        y += 25;
+        createVehicleLablePdfFieldValue(doc,'តំលៃ ​/ Price',vehicle.price, y);
+    
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename=${fileName}`);
+        doc.pipe(res);
+        doc.end();
+        
+      });
+
+    
+}
+
 exports.fbqr = async function (req, res) {
     const options = {
         color: {
@@ -55,7 +134,6 @@ exports.fbqr = async function (req, res) {
         }
     };
     const fbData = 'fb://page/soleapmotor';
-    // const tgData = `tg://resolve?domain=borenpeng`;
     // Generate the QR code
     QRCode.toFile('qrcode.jpg', fbData, options, function (err) {
         if (err) {
@@ -108,19 +186,20 @@ exports.fbqr = async function (req, res) {
 exports.generateInvoice = async function (req, res) {
    
     var query = Invoice.findOne({ _id: req.params.id });
-    query.populate('customer').populate('institute').populate('color')
+    query.populate('customer').populate('institute')
     .populate({
-    path: 'item',
-    populate: { path: 'category' }
+        path: 'vehicle',
+        populate: [{ path: 'category' }, { path: 'color' }, { path: 'condition' } ]
     });
 
     await query.exec(function(err, invoice) {    
-        createPdfFile(req, res, invoice);
+        createInvoicePdfFile(req, res, invoice);
     });
     
 }
 
-function createPdfFile(req, res, invoice) {
+
+function createInvoicePdfFile(req, res, invoice) {
     const doc = new PDFDocument({size: 'A4', margins: { top: 10, left: 10, right: 10, bottom: 10 }});
 
             const fileName = invoice._id + '.pdf';
@@ -130,7 +209,7 @@ function createPdfFile(req, res, invoice) {
             // doc.image('public/imgs/qr_tg.jpg', 100, 120, {fit: [50, 50]})
 
             doc.fillColor('#851718');
-            doc.font('public/fonts/KhmerOSniroth.ttf').fontSize(12).text('ទិញ-លក់ ម៉ូតូ កង់បី គ្រប់ប្រភេទ',20, 90);
+            doc.font('public/fonts/KhmerOSniroth.ttf').fontSize(12).text('ទិញ-លក់ ម៉ូតូ គ្រប់ប្រភេទ',20, 90);
             doc.moveDown(0.03);
             doc.text('មានសាវាកម្មបង់រំលស់ ១០០%',23);
             doc.font('public/fonts/khmerosmoul.ttf').fontSize(18).text('សុលាភ លក់ម៉ូតូបង់រំលស់',200, 30);
@@ -138,7 +217,7 @@ function createPdfFile(req, res, invoice) {
             doc.font('public/fonts/arialbd.ttf').fontSize(15).text('SOLEAP MOTORSHOP');
             doc.moveDown(0.2);
     
-            doc.fillColor('black')
+            doc.fillColor('#7c7c7d')
             doc.font('public/fonts/khmerossystem.ttf').fontSize(9).text('អាស័យដ្ឋាន៖ ភូមិទឹកថ្លា សង្កាត់ក្រាំងពង្រ ខណ្ឌដង្កោ រាជធានីភ្នំពេញ');
             doc.moveDown(0.1);
             doc.font('public/fonts/arial.ttf').fontSize(8).text('Address: Tuek Thla Village, Sangkat Krang Pongro, Khan Dangkao, City Phnom Penh');
@@ -148,9 +227,10 @@ function createPdfFile(req, res, invoice) {
             doc.font('public/fonts/arial.ttf').fontSize(8).text('Telephone: 077 41 43 89, 096 97 98 928, 088 97 98 928');
             doc.moveDown(0.1);
             doc.font('public/fonts/khmerossystem.ttf').fontSize(8).text('Telegram: 096 97 98 928 Facebook: សុលាភ លក់ម៉ូតូបង់រំលស់');
+            doc.fillColor('black')
             doc.moveDown(5);
             doc.text('', 0, 180);
-            doc.font('public/fonts/khmerosmoul.ttf').fontSize(18).text('វិក្កយបត្រ', {align: 'center'});
+            doc.font('public/fonts/khmerosmoul.ttf').fontSize(18).text('វិក្កយបត្រលក់', {align: 'center'});
             doc.moveDown(0.1);
             doc.font('public/fonts/arial.ttf').fontSize(18).text('INVOICE', {align: 'center'});
             doc.moveDown(0.3);
@@ -173,14 +253,27 @@ function createPdfFile(req, res, invoice) {
             doc.text(invoice.customer.phoneNumber, 150, 325, { width: 190});
         
             doc.text('លេខរៀងវិក្កបត្រ / Invoice No : ',350 ,250 );
-            doc.text( invoice.number.toString().padStart(6, '0'),475 ,250);
+
+    
+            doc.text(invoice.number.prefix + '-' + invoice.number.count.toString().padStart(6, '0'),475 ,250);
             doc.moveDown(0.2);
 
             var date = new Date(invoice.date);
-        
             doc.text('កាលបរិច្ឆេទ / Date                :', 350);
+            
             doc.moveUp();
             doc.text(moment(date).format('DD/MM/yyyy'),475);
+            doc.moveDown(0.2);
+            doc.text('ស្លាកលេខ / Plate Number     : ', 350);
+            doc.moveUp();
+
+            if (invoice.vehicle.condition.key == 'SECONDHAND') {
+                doc.text(invoice.vehicle.platenumber,475);
+            }
+            else {
+                doc.text('ក្រដាស់ពន្ធ',475);
+            }
+
             doc.text('', 0, 360);
             const startX = 20;
             const startY = 360;
@@ -232,10 +325,11 @@ function createPdfFile(req, res, invoice) {
             x = x + 30;
             doc.font('public/fonts/khmerossystem.ttf').fontSize(10);
             doc.rect(x, y, 225, 200).fillAndStroke('#ffffff', '#000000');
-            doc.fillColor('#000000').text(invoice.item.category.name, x + 5, y + 5, { width: 225});
-            doc.fillColor('#000000').text(invoice.item.name + " - ព៌ណ" + invoice.color.name +  " - ឆ្នាំ" + invoice.year, x + 5, y + 20, { width: 225});
-            doc.fillColor('#000000').text("លេខតួរ: " + invoice.chassisNumber, x + 5, y + 35, { width: 225});
-            doc.fillColor('#000000').text("លេខម៉ាស៊ីន: " + invoice.machineNumber, x + 5, y + 50, { width: 225});
+        
+            doc.fillColor('#000000').text(invoice.vehicle.name, x + 5, y + 5, { width: 225});
+            doc.fillColor('#000000').text("លេខតួរ: " + invoice.vehicle.chassisno, x + 5, y + 20, { width: 225});
+            doc.fillColor('#000000').text("លេខម៉ាស៊ីន: " + invoice.vehicle.engineno, x + 5, y + 35, { width: 225});
+
 
             x = x + 225;
             doc.rect(x, y, 60, 200).fillAndStroke('#ffffff', '#000000');
@@ -299,7 +393,7 @@ function createPdfFile(req, res, invoice) {
             doc.font('Helvetica').fontSize(8);
             doc.fillColor('#000000').text("Note: Original Invoice for customer, copied invoice for seller", x + 5, y + 20, { width: 300, align:'left'});
 
-            y = startY + 110;
+            y = startY + 100;
 
             doc.lineCap('butt').moveTo(20, y).dash(2, {space: 3}).lineTo(575, y).stroke();
 
@@ -417,7 +511,7 @@ function getPopulateField(docName) {
     }
 
     if (docName == 'invoice') {
-        return ["customer", "institute", "item", "color"];
+        return ["customer", "institute", "vehicle", "color"];
     }
 
     if (docName == 'loan') {
@@ -515,23 +609,20 @@ function createContactViewData(docName, doc) {
 }
 
 function createVehicleViewData(docName, doc) {
-
-    console.log(doc);
     var viewDocSnapshot = {};
     viewDocSnapshot._id = doc.id;
     viewDocSnapshot.docClassName = docName;
+    viewDocSnapshot.title = doc.name;
     var photo = doc.photo ? doc.photo.path : null;
     var general = {label:"general", dataType: "GROUP", type: "GROUP", editTable: false, viewType: null};     
     general.childrent  = {
-        
-        barcode: { label: "barcode", value:doc.barcode, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
         name: { label: "name", value:doc.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
         category: { label: "category", value:doc.category.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
         description:  {label: "description", value:doc.description, dataType: "STRING",type:"DATA", viewType: 'TEXT'}, 
         enable:  {label: "enable", value:doc.enable, dataType: "BOOLEAN",type:"DATA", viewType: 'BOOLEAN'},
     };
 
-    var photo = { label: "photo", lableVisible: false,  value:photo, dataType: "PHOTO",type:"DATA", action: "PHOTO_VIEW"};
+    var photo = { label: "photo", lableVisible: false,  value:photo, dataType: "PHOTO",type:"DATA", action: "PHOTO_VIEW", visible: 8};
 
     var price = {label:"price", dataType: "GROUP", type: "GROUP", editTable: false, viewType: null};     
     price.childrent  = {
@@ -543,14 +634,15 @@ function createVehicleViewData(docName, doc) {
     var vehicle = {label:"vehicle", dataType: "GROUP", type: "GROUP", editTable: false, viewType: null};     
     vehicle.childrent  = {
         maker: { label: "maker", value:doc.maker.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        type: { label: "type", value:doc.type.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
+        type: { label: "type", value:doc.type.key, dataType: "RESOURCE_STRING",type:"DATA", viewType: 'TEXT'},
         model: { label: "model", value:doc.model.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
+        condition: { label: "condition", value:doc.condition.key, dataType: "RESOURCE_STRING",type:"DATA", viewType: 'TEXT'},
         chassisno: { label: "chassisno", value:doc.chassisno, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
         engineno: { label: "engineno", value:doc.engineno, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
         color: { label: "color", value:doc.color.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
         horsepower: { label: "horsepower", value:doc.horsepower, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
         year: { label: "production_year", value:doc.year.toString(), dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        condition: { label: "condition", value:doc.condition.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
+        platenumber: { label: "platenumber", value:doc.platenumber, dataType: "STRING",type:"DATA", viewType: 'TEXT'}
     };
 
     var data = {photo: photo, general: general, price: price, vehicle: vehicle};
@@ -568,7 +660,6 @@ function createItemViewData(docName, doc) {
     var general = {label:"general", dataType: "GROUP", type: "GROUP", editTable: false, viewType: null};     
     general.childrent  = {
         type: { label: "type", value:doc.type, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        barcode: { label: "barcode", value:doc.barcode, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
         photo: { label: "photo", value:photo, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
         name: { label: "name", value:doc.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
         category: { label: "category", value:doc.category.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
@@ -620,7 +711,6 @@ function createListViewData(docName, doc) {
     if (docName == 'model') {
         data = createNameWithKeyListItemViewData(docName, doc);
     }
-
 
     if (docName == 'type') {
         data = createNameWithKeyListItemViewData(docName, doc);
@@ -716,12 +806,12 @@ function createInvoiceListItemViewData(docName, doc) {
     viewDocSnapshot.data  = {
         number: { label: "number", value: doc.number.prefix + '-' + doc.number.count , dataType: "STRING", type:"DATA", format: "%06d"},
         date: {label: "date", value:dateString, dataType: "STRING",type:"DATA"},
-        customer : {label: "contact", value:doc.customer.name, dataType: "STRING",type:"DATA"},
+        customer : {label: "customer", value:doc.customer.name, dataType: "STRING",type:"DATA"},
+        vehicle : {label: "vehicle", value:doc.vehicle.name, dataType: "STRING",type:"DATA"},
         institute : {label: "institute", value:doc.institute ? doc.institute.name : null, dataType: "STRING",type:"DATA"},
         paymentoption: {label: "paymentoption", value:doc.paymentoption, dataType: "RESOURCE_STRING",type:"DATA"},
         price:  {label: "price", value:doc.price, dataType: "CURRENCY",type:"DATA", locale: "US"}
     };
-
     return viewDocSnapshot;
 }
 
@@ -834,7 +924,7 @@ function createInstituteListItemViewData(docName, doc) {
     viewDocSnapshot.docClassName = docName;
     viewDocSnapshot.data  = {
         code:{label: "code", value:doc.code, dataType: "STRING",type:"DATA"},
-        logo: {label: "logo", value:doc.logo.path, dataType: "PHOTO",type:"DATA", action: "PHOTO_UPLOAD"},
+        logo: {label: "logo", value:null, dataType: "PHOTO",type:"DATA", action: "PHOTO_UPLOAD"},
         name:{label: "name", value:doc.name, dataType: "STRING",type:"DATA"},
         latinname:{label: "latinname", value:doc.latinname, dataType: "STRING",type:"DATA"},
         address:{label: "address", value:doc.address, dataType: "STRING",type:"DATA"}
@@ -876,7 +966,6 @@ function createNameWithKeyListItemViewData(docName, doc) {
     };
     return viewDocSnapshot;
 }
-
 
 function createLatinNameListItemViewData(docName, doc) {
     var viewDocSnapshot = {};

@@ -30,7 +30,6 @@ db.loan = require("./loan");
 db.media = require("./media");
 db.institute = require("./institute");
 
-
 db.ROLES = ["user", "admin", "moderator", "manager", "co", "saler"];
 
 module.exports = db;

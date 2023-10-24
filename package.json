@@ -23,6 +23,7 @@
     "express-fileupload": "^1.2.1",
     "express-validator": "^7.0.1",
     "jimp": "^0.22.8",
+    "jsbarcode": "^3.11.5",
     "jsonwebtoken": "^9.0.0",
     "machine-readable-zone": "^0.2.14",
     "moment-timezone": "^0.5.40",

@@ -15,8 +15,8 @@ else {
 	database.dropCollection('contacts', function(err, result) {});
 	database.dropCollection('institutes', function(err, result) {});
 	database.dropCollection('vehicles', function(err, result) {});
+	database.dropCollection('invoices', function(err, result) {});
 	demo();
 	console.log("Db connected successfully");
 }
-
-process.exit();
+// process.exit();

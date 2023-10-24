@@ -2,7 +2,6 @@ var mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate-v2');
 
 const vehicleSchema = mongoose.Schema({
-    barcode: { type: String, required: true, unique:true },
     name: { type: String, required: true },
     photo: {type: mongoose.Schema.Types.ObjectId, ref: 'media'},
     account: {type: mongoose.Schema.Types.ObjectId, ref: 'account'},
@@ -19,7 +18,8 @@ const vehicleSchema = mongoose.Schema({
     engineno: { type: String, required: false},
     horsepower: {type: String},
     year: {type:Number, require:true},
-    enable: {type:Boolean, required:true, default:true}
+    enable: {type:Boolean, required:true, default:true},
+    platenumber: {type: String}
 });
 
 vehicleSchema.plugin(mongoosePaginate);

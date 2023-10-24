@@ -11,26 +11,45 @@ const Invoice = db.invoice;
 const Loan = db.loan;
 const Vehicle = db.vehicle;
 
-
-const Itemspecification = db.itemspecification;
-
 module.exports = async function(app) {
     var institute = createInstitutes();
     var contacts = createContacts();
-    const account = await Account.findOne({ 'number': 102 });
-    const category = await Category.findOne({ 'key': 'MOTORBIKE' });
-    const maker = await db.maker.findOne({ 'key': 'HONDA_NCX' });
-    const type = await db.type.findOne({ 'key': 'OFF_ROAD' });
-    const con = await db.condition.findOne({ 'key': 'NEW' });
-    const model = await db.model.findOne({ 'key': 'SCOOPY_PRESTIGE' });
-    const color = await db.color.findOne({ 'name': 'ខ្មៅ' });
-    const vehicle = createVehicle('1234567890','Honda Dream 125CC 2023 - Black', account._id, category._id, category._id, maker._id, type._id, con._id, color._id, model._id);
+    const account = await Account.findOne({ 'number': 102 }).exec();
+    const category = await Category.findOne({ 'key': 'MOTORBIKE' }).exec();
+    const maker = await db.maker.findOne({ 'key': 'HONDA_NCX' }).exec();
+    const type = await db.type.findOne({ 'key': 'OFF_ROAD' }).exec();
+    const newVehicle = await db.condition.findOne({ 'key': 'NEW' }).exec();
+    const secondhand = await db.condition.findOne({ 'key': 'SECONDHAND' }).exec();
+    const model = await  db.model.findOne({ 'key': 'SCOOPY_PRESTIGE' }).exec();
+    const color = await db.color.findOne({ 'name': 'ខ្មៅ' }).exec();
 
-    
+    const vehicle = createVehicle('Honda Dream 125CC - 2023 - Black', account._id, category._id, maker._id, type._id, newVehicle._id, color._id, model._id, null);
+    const secondHandVehicle = createVehicle('Honda Dream 125CC - 2023 - Black', account._id, category._id, maker._id, type._id, secondhand._id, color._id, model._id, 'AR-2052');
 
 
-    // barcode, name, acct, cat, maker, type, con, color, model
+    const datetime = new Date();
+    var cashsaleInvoice = new Invoice();
+    cashsaleInvoice.date = datetime.getTime();
+    cashsaleInvoice.customer = contacts[0]._id;
+    cashsaleInvoice.vehicle = vehicle._id;
+    cashsaleInvoice.number = {};
+    cashsaleInvoice.number.prefix = 'INV';
+    cashsaleInvoice.paymentoption = 'CASH_PAY';
+    cashsaleInvoice.qty = 1;
+    cashsaleInvoice.price = 2350;
+    cashsaleInvoice.save();
 
+    var loanSaleInvoice = new Invoice();
+    loanSaleInvoice.date = datetime.getTime();
+    loanSaleInvoice.customer = contacts[0]._id;
+    loanSaleInvoice.vehicle = secondHandVehicle._id;
+    loanSaleInvoice.institute = institute._id;
+    loanSaleInvoice.number = {};
+    loanSaleInvoice.number.prefix = 'INV';
+    loanSaleInvoice.paymentoption = 'LOAN';
+    loanSaleInvoice.qty = 1;
+    loanSaleInvoice.price = 2750;
+    loanSaleInvoice.save();   
 }
 
 function createContacts() {
@@ -115,61 +134,6 @@ function createInstitutes() {
     return createInstitue('GLF', 'ជីអិលហ្វាយនែន ភីអិលស៊ី', 'GL FINANCE PLC', '070433123', 'ផ្ទះលេខ ២៧០,២៧៤ ផ្លូវកម្ពុជាក្រោម ភូមិ ៤ សង្កាត់ មិត្តភាព ខណ្ឌ ៧មករា រាជធានីភ្នំពេញ');
 }
 
-async function createInvoice(item) {
-    console.log('Creaet a test invoice');       
-    const customer = await Contact.findOne({ name: 'ណីតា សុខ' });
-    const datetime = new Date();
-    var invoice = new Invoice();
-    invoice.date = datetime.getTime();
-    invoice.customer = customer._id;
-    invoice.item = item._id;
-    invoice.number = {};
-    invoice.number.prefix = 'INV';
-    invoice.paymentoption = 'CASH_PAY';
-    invoice.qty = 1;
-    invoice.price = 2350;
-    invoice.save();
-};
-
-async function createLoanInvoice(index) {
-    console.log('Creaet a test invoice');       
-    const glFinance = await Institute.findOne({ name:'ជីអិលហ្វាយនែន ភីអិលស៊ី'});
-    const customer = await Contact.findOne({ name:'សុភាសិត កែវ' });
-    const item = await Item.findOne({ name:'Honda Dream 125CC 2023 - Black' });
-    const datetime = new Date();
-    const milliseconds = datetime.getTime();
-    
-    var invoice = new Invoice();
-    invoice.date = milliseconds;
-    invoice.number = {};
-    invoice.number.prefix = 'INV';
-    invoice.customer = customer._id;
-    invoice.institute = glFinance._id;
-    invoice.item = item._id;
-    invoice.machineNumber = '123456789';
-    invoice.chassisNumber = '123456789';
-    invoice.plateNumber = '123456789';
-    invoice.color = '6485b150a54e2d6efc2d8e90';
-    invoice.year = 2023;
-    invoice.condition = 'NEW';
-    invoice.paymentoption = 'LOAN';
-    invoice.qty = 1;
-    invoice.price = 2350;
-    invoice.save();
-    
-    var loan = new Loan();
-    loan.date = datetime.getTime();
-    loan.contractNumber = 'Testing Contact No' + index;
-    loan.institute = glFinance._id;
-    loan.customer = customer._id;
-    loan.invoice = invoice;
-    loan.amount = 2000;
-    loan.status = 'NEW';
-    loan.save();
-    
-};
-
-
 function createInstitue(code, name, latinname, phoneNumber, address) {
     console.log(util.format('- Create institute %s-%s-%s-%s-%s',code, name,latinname, phoneNumber, address));
     var institute = new Institute();
@@ -201,10 +165,9 @@ function createContact(data, index) {
     return contact;
 }
 
-function createVehicle(barcode, name, acct, cat, maker, type, con, color, model) {  
+function createVehicle(name, acct, cat, maker, type, con, color, model, platenumber) {  
     console.log('Create new Vehicle: ' + name);
     var vehicle = new Vehicle();
-    vehicle.barcode = barcode;
     vehicle.name = name;
     vehicle.account = acct;
     vehicle.price = 2050;
@@ -223,7 +186,9 @@ function createVehicle(barcode, name, acct, cat, maker, type, con, color, model)
     vehicle.horsepower = '150cc';
     vehicle.year = 2018;
     vehicle.enable = true;
+    vehicle.platenumber = platenumber;
     vehicle.save();
+
     return vehicle;
     
 }
