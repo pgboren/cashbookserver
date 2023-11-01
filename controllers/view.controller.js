@@ -404,6 +404,32 @@ function createInvoicePdfFile(req, res, invoice) {
             doc.end();
 }
 
+exports.lookup = async function (req, res) {
+
+    const limit = parseInt(req.query.limit) || 10;
+        const { select, orders, filter } = req.body;
+        const docModel = mongoose.model(req.params.docname);
+        const options = {
+            page: parseInt(req.query.page) || 1,
+            populate: getPopulateField(req.params.docname),
+            limit: limit,
+            sort: orders
+        };
+        const result = await docModel.paginate(filter, options);
+        const docs = [];
+        result.docs.forEach(model => {
+            docs.push(model);
+        });
+
+        res.status(200).json({
+            data: docs,
+            currentPage: result.page,
+            totalPages: result.totalPages,
+            totalItems: result.totalDocs,
+        });
+
+};
+
 exports.getViewData = async function (req, res) {
     try {
         var response = null;

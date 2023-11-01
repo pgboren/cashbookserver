@@ -19,4 +19,4 @@ else {
 	demo();
 	console.log("Db connected successfully");
 }
-// process.exit();
+process.exit();
