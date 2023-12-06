@@ -10,6 +10,7 @@ db.documentField = require("./documentField");
 
 db.user = require("./user");
 db.role = require("./role");
+db.user_access_token = require("./user_access_token");
 db.accounttype = require("./accounttype");
 db.account = require("./account");
 
@@ -29,6 +30,10 @@ db.counter = require("./counter");
 db.loan = require("./loan");
 db.media = require("./media");
 db.institute = require("./institute");
+db.province = require("./province");
+db.district = require("./district");
+db.commune = require("./commune");
+db.village = require("./village");
 
 db.ROLES = ["user", "admin", "moderator", "manager", "co", "saler"];
 

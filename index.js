@@ -54,6 +54,8 @@ require('./routes/view.routes')(app);
 require('./routes/auth.routes')(app);
 require('./routes/user.routes')(app);
 require('./routes/media.routes')(app);
+require('./routes/refdata.routes')(app);
+require('./routes/gazetteer.routes')(app);
 
 app.listen(port, function () {
     console.log("Running RestHub on port " + port);

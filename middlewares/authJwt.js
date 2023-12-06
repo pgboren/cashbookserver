@@ -3,6 +3,7 @@ const config = require("../config/auth.config.js");
 const db = require("../models");
 const User = db.user;
 const Role = db.role;
+const UserAccessToken = db.user_access_token;
 
 verifyToken = (req, res, next) => {
   let token = req.headers["x-access-token"];
@@ -10,12 +11,24 @@ verifyToken = (req, res, next) => {
   if (!token) {
     return res.status(403).send({ message: "No token provided!" });
   }
-
-  jwt.verify(token, config.secret, (err, decoded) => {
-    if (err) {
-      return res.status(401).send({ message: "Unauthorized!" });
+  UserAccessToken.findOne({ token: token }).exec()
+  .then(userAccessToken => {
+    if (userAccessToken.active) {
+      jwt.verify(token, config.secret, (err, decoded) => {
+        if (err) {
+          return res.status(401).send({ message: "Unauthorized!" });
+        }
+        req.userId = decoded.id;
+        next();
+      });
     }
-    req.userId = decoded.id;
+    else {
+      return res.status(401).send({ message: "Unauthorized!" });
+    next();
+    }
+  })
+  .catch(error => {
+    return res.status(401).send({ message: "Unauthorized!" });
     next();
   });
 };

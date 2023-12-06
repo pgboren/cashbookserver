@@ -4,10 +4,7 @@ const mongoosePaginate = require('mongoose-paginate-v2');
 const vehicleSchema = mongoose.Schema({
     name: { type: String, required: true },
     photo: {type: mongoose.Schema.Types.ObjectId, ref: 'media'},
-    account: {type: mongoose.Schema.Types.ObjectId, ref: 'account'},
     description: { type: String, required: false },
-    price: {type:Number, require:true},
-    cost: {type:Number, require:true},
     category: {type: mongoose.Schema.Types.ObjectId, ref: 'category'},    
     maker: {type: mongoose.Schema.Types.ObjectId, ref: 'maker'},    
     type: {type: mongoose.Schema.Types.ObjectId, ref: 'type'},    

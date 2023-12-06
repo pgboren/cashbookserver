@@ -14,6 +14,7 @@ const Color = db.color;
 const Category = db.category;
 const Counter = db.counter;
 const Institute = db.institute;
+const Media = db.media;
 
 module.exports = function(app) {
 	console.log("Initial User Roles Data");
@@ -57,8 +58,8 @@ module.exports = function(app) {
 		const adminUser = new User({
 			username: 'admin',
 			email: 'admin@soleapmotor.com',
-			password: bcrypt.hashSync('admin', 8)
-		  });
+			password: 'admin'
+		});
 
 		adminUser.roles.push(adminRole);
 		adminUser.save(err => {
@@ -150,11 +151,8 @@ module.exports = function(app) {
 		var equityType = createAccountType("Equity", "DECREASED", "INCREASED");
 		createAccount(601, 'តាន់ស៊ីនឿន - ដើមទុន', equityType._id, 'BALANCE_SHEET');
 		createAccount(602, 'តាន់ស៊ីនឿន - ដកទុន', equityType._id, 'BALANCE_SHEET');
-					
 	}
-
 	createInstitutes();
-
   })
   .catch((err) => {
     // Handle the error
@@ -371,7 +369,13 @@ function createInstitutes() {
 		institute.name = 'ធនាគារ វីង';
 		institute.latinname = 'Wing Bank';
 		institute.address = 'អគារលេខ 721 មហាវិថីព្រះមុនីវង្ស ភូមិភូមិ 9 សង្កាត់បឹងកេងកងទី 3 ខណ្ឌបឹងកេងកង រាជធានីភ្នំពេញ';
-		institute.logo = '64b7ec4a0a8fb90838d5dceb';
+		var wing = new Media();
+		wing.name = "wing.jpg";
+		wing.size = 19338;
+		wing.mimetype = 'image/jpeg';
+		wing.path = 'uploads/wing.jpg';
+		wing.save();
+		institute.logo = wing._id;
 		institute.save();
 		
 		var institute = new Institute();
@@ -379,7 +383,13 @@ function createInstitutes() {
 		institute.name = 'ខេ ខេ ហ្វាន់';
 		institute.latinname = 'KK FUND LEASING PLC';
 		institute.address = 'ផ្ទះលេខ 69-71 ផ្លូវ 271 សង្កាត់ទំនប់ទឹក ខណ្ឌ បឹងកេងកង រាជធានីភ្នំពេញ';
-		institute.logo = '64b7ec330a8fb90838d5dce1';
+		var kk = new Media();
+		kk.name = "kk.jpg";
+		kk.size = 19338;
+		kk.mimetype = 'image/jpeg';
+		kk.path = 'uploads/kk.jpg';
+		kk.save();
+		institute.logo = kk._id;
 		institute.save();
 
 		institute = new Institute();
@@ -387,7 +397,13 @@ function createInstitutes() {
 		institute.name = 'ឆាយលីស';
 		institute.latinname = 'Chailease Royal Leasing Plc';
 		institute.address = 'គារ ២១៦បេ ជាន់ទី៣ មហាវិថីព្រះនរោត្ដម (៤១) សង្កាត់ទន្លេបាសាក់ ខណ្ឌចំការមន ភ្នំពេញ';
-		institute.logo = '64b7ec3c0a8fb90838d5dce5';
+		var cl = new Media();
+		cl.name = "cl.jpg";
+		cl.size = 19338;
+		cl.mimetype = 'image/jpeg';
+		cl.path = 'uploads/cl.jpg';
+		cl.save();
+		institute.logo = cl._id;
 		institute.save();
 
 		institute = new Institute();
@@ -395,7 +411,13 @@ function createInstitutes() {
 		institute.name = 'អាក់ទីវភីភល';
 		institute.latinname = ' Active People';
 		institute.address = 'អាគារលេខ៨៨ ផ្លូវលេខ២១៤ កែងនឹងផ្លូវលេខ១១៣ សង្កាត់បឹងព្រលិត ខណ្ឌ៧មករា រាជធានីភ្នំពេញ';
-		institute.logo = '64b7ec410a8fb90838d5dce7';
+		var ap = new Media();
+		ap.name = "ap.jpg";
+		ap.size = 19338;
+		ap.mimetype = 'image/jpeg';
+		ap.path = 'uploads/ap.jpg';
+		ap.save();
+		institute.logo = ap._id;
 		institute.save();
 
 		institute = new Institute();
@@ -403,15 +425,13 @@ function createInstitutes() {
 		institute.name = 'ជីអិល';
 		institute.latinname = 'GL Finance PLC';
 		institute.address = 'អាគាលេខ 270, 274 ផ្លូវកម្ពុជាក្រោម សង្កាត់មិត្តភាព ខណ្ឌ៧មករា រាជធានីភ្នំពេញ';
-		institute.logo = '64b7ec380a8fb90838d5dce3';	
-		institute.save();
-
-		institute = new Institute();
-		institute.code = 'AMK';
-		institute.name = 'អេ​ អឹម ខេ';
-		institute.latinname = 'AMK Microfinance Institution PLC';
-		institute.address = 'អគារលេខ ២៨៥  មហាវិថីយុទ្ធពលខេមរៈភូមិន្ទ (ផ្លូវ ២៧១) ​ សង្កាត់ទំនប់ទឹក  ខណ្ឌបឹងកេងកង រាជធានីភ្នំពេញ';
-		institute.logo = '64b7ec450a8fb90838d5dce9';	
+		var gl = new Media();
+		gl.name = "gl.jpg";
+		gl.size = 19338;
+		gl.mimetype = 'image/jpeg';
+		gl.path = 'uploads/gl.jpg';
+		gl.save();
+		institute.logo = gl._id;
 		institute.save();
 
 	  }	

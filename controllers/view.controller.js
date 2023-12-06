@@ -27,6 +27,15 @@ var JsBarcode = require('jsbarcode');
 
 var viewType = new Enum({'LIST_VIEW': 'LIST_VIEW', 'LIST_ITEM_VIEW': 'LIST_ITEM_VIEW', 'DOC_VIEW': 'DOC_VIEW'});
 
+var tutorials = [];
+
+exports.tutorialList = function(req, res) {
+    tutorials.push({title: 'Tutorial 1',description: 'Tutorial 1',published: true});
+    tutorials.push({title: 'Tutorial 2',description: 'Tutorial 2',published: true});
+    tutorials.push({title: 'Tutorial 3',description: 'Tutorial 3',published: true});
+    res.status(200).json(tutorials);   
+}
+
 exports.getDocumentClass = async function (req, res) {
     try {
         var query = DocumentClass.findOne({ name:  req.params.docname});
@@ -50,14 +59,17 @@ exports.nextcounter = async function (req, res) {
           console.error(err);
           return;
         }
-        var nextSequenceValue = seq.seq + 1;
+        var nextSequenceValue = 1;
+        if (seq != null) {
+            nextSequenceValue = seq.seq + 1;
+        }
+        
         var result = {};
         result.id = req.params.id;
         result.seq = nextSequenceValue;
         res.status(200).json(result);
       });
 }
-
 
 exports.generateVehicleLable = async function (req, res) {
    var query = db.vehicle.findOne({ _id: req.params.id }).populate(['color', 'maker', 'type', 'condition'] );
@@ -72,7 +84,6 @@ function createVehicleLablePdfFieldValue(doc, label, value, post) {
     doc.fontSize(11);
     doc.text(':  ' + value, 135, post);
 }
-
 
 function createVehicleLablePdfFile(req, res, vehicle) {
 
@@ -250,7 +261,7 @@ function createInvoicePdfFile(req, res, invoice) {
             doc.text(invoice.customer.type + '-' + invoice.customer.number, 150, 305, { width: 190});
             doc.moveDown(0.2);
             doc.text('ទូរស័ព្ទលេខ / Telephone       :', 20);
-            doc.text(invoice.customer.phoneNumber, 150, 325, { width: 190});
+            doc.text(invoice.customer.primaryNumber, 150, 325, { width: 190});
         
             doc.text('លេខរៀងវិក្កបត្រ / Invoice No : ',350 ,250 );
 
@@ -423,6 +434,7 @@ exports.lookup = async function (req, res) {
 
         res.status(200).json({
             data: docs,
+            type: req.params.docname,
             currentPage: result.page,
             totalPages: result.totalPages,
             totalItems: result.totalDocs,
@@ -553,20 +565,17 @@ function getPopulateField(docName) {
 function createDocViewData(docName, doc) {
     var data = null;
 
+    if (docName == 'contact') {
+        data = createContactViewData(docName, doc);
+    }
+
+
     if (docName == 'maker') {
         data = createNamePhotoViewData(docName, doc);
     }
 
-    if (docName == 'item') {
-        data = createItemViewData(docName, doc);
-    }
-
     if (docName == 'vehicle') {
         data = createVehicleViewData(docName, doc);
-    }
-
-    if (docName == 'contact') {
-        data = createContactViewData(docName, doc);
     }
 
     if (docName == 'invoice') {
@@ -615,17 +624,9 @@ function createContactViewData(docName, doc) {
     viewDocSnapshot.docClassName = docName;
     var general = {label:"general", dataType: "GROUP", type: "GROUP", editTable: false, viewType: null};     
     general.childrent  = {};
-
-
-    general.childrent.code = { label: "code", value:doc.type + '-' + doc.number, dataType: "STRING",type:"DATA"};
     general.childrent.name = { label: "name", value:doc.name, dataType : "STRING",type:"DATA", viewType: 'TEXT'};
-    general.childrent.latinname = { label: "latinname", value:doc.latinname , dataType: "STRING", type:"DATA", viewType: 'TEXT'};
-    if (doc.type == 'CUS') {
-        general.childrent.nickname = { label: "nickname", value:doc.nickname , dataType: "STRING", type:"DATA", viewType: 'TEXT'};
-        general.childrent.gender = {label: "gender", value:doc.gender, dataType: "RESOURCE_STRING",type:"DATA"};
-    }
-
-    general.childrent.phoneNumber = { label: "phoneNumber", value:doc.phoneNumber , dataType: "STRING", type:"DATA", viewType: 'TEXT'};
+    general.childrent.primaryNumber = { label: "primaryNumber", value:doc.primaryNumber , dataType: "STRING", type:"DATA", viewType: 'TEXT'};
+    general.childrent.secondaryNumber = { label: "secondaryNumber", value:doc.secondaryNumber , dataType: "STRING", type:"DATA", viewType: 'TEXT'};
     general.childrent.facebook = { label: "facebook", value:doc.facebook , dataType: "STRING", type:"DATA", viewType: 'TEXT'};
     general.childrent.telegram = { label: "telegram", value:doc.telegram , dataType: "STRING", type:"DATA", viewType: 'TEXT'};
     general.childrent.address = { label: "address", value:doc.address , dataType: "STRING", type:"DATA", viewType: 'TEXT'};
@@ -763,11 +764,22 @@ function createListViewData(docName, doc) {
     }
 
     if (docName == 'vehicle') {
-        data = createVehicleListItemViewData(docName, doc);
-    }
-
-    if (docName == 'item') {
-        data = createItemListItemViewData(docName, doc);
+        data =  {
+            type: doc.type._id,
+            barcode: doc.barcode,
+            name: doc.name,
+            category: doc.category._id,
+            maker: doc.maker._id,
+            model: doc.model._id,
+            condition:doc.condition._id,
+            chassisno:doc.chassisno,
+            engineno: doc.engineno,
+            color: doc.color,
+            horsepower: doc.horsepower,
+            year: doc.year,
+            description: doc.description, 
+            enable: doc.enable
+        };
     }
 
     if (docName == 'itemspecification') {
@@ -790,8 +802,6 @@ function createListViewData(docName, doc) {
     if (docName == 'invoice') {
         data = createInvoiceListItemViewData(docName, doc);
     }
-
-    
 
     if (docName == 'loan') {
         data = createLoanListItemViewData(docName, doc);
@@ -821,7 +831,6 @@ function createLoanListItemViewData(docName, doc) {
     };
     return viewDocSnapshot;
 }
-
 
 function createInvoiceListItemViewData(docName, doc) {
     var viewDocSnapshot = {};
@@ -868,50 +877,21 @@ function createItemSpecificationListItemViewData(docName,doc) {
 }
 
 function createVehicleListItemViewData(docName, doc) {
-    var viewDocSnapshot = {};
-    viewDocSnapshot._id = doc.id;
-    viewDocSnapshot.docClassName = docName;
-    var general = {label:"general", dataType: "GROUP", type: "GROUP"};    
-    var photo = doc.photo? doc.photo.path: null;
-    viewDocSnapshot.data  = {
-        type: { label: "type", value:doc.type, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        barcode: { label: "barcode", value:doc.barcode, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        photo: { label: "photo", value:photo, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        name: { label: "name", value:doc.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        category: { label: "category", value:doc.category.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        make: { label: "make", value:doc.make, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        model: { label: "model", value:doc.model, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        type: { label: "type", value:doc.type, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        condition: { label: "condition", value:doc.condition, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        chassisno: { label: "chassisno", value:doc.chassisno, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        engineno: { label: "engineno", value:doc.engineno, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        color: { label: "color", value:doc.color, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        horsepower: { label: "horsepower", value:doc.horsepower, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        year: { label: "year", value:doc.year, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        account: { label: "account", value:doc.account.number + ' : ' + doc.account.name , dataType: "STRING", type:"DATA", viewType: 'TEXT'},
-        price:  {label: "price", value:doc.price, dataType: "CURRENCY",type:"DATA", locale: "US", viewType: 'CURRENCY'},
-        cost:  {label: "cost", value:doc.cost, dataType: "CURRENCY",type:"DATA", locale: "US", viewType: 'CURRENCY'},
-        description:  {label: "description", value:doc.description, dataType: "STRING",type:"DATA", viewType: 'TEXT'}, 
-        account:  {label: "account", value:doc.account._id, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        enable:  {label: "enable", value:doc.enable, dataType: "BOOLEAN",type:"DATA", viewType: 'BOOLEAN'}
-    };
-    return viewDocSnapshot;
-}
-
-function createItemListItemViewData(docName, doc) {
-    var viewDocSnapshot = {};
-    viewDocSnapshot._id = doc.id;
-    viewDocSnapshot.docClassName = docName;
-    var general = {label:"general", dataType: "GROUP", type: "GROUP"};    
-    var photo = doc.photo? doc.photo.path: null;
-    viewDocSnapshot.data  = {
-        type: { label: "type", value:doc.type, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        photo: { label: "photo", value:doc.photo.path, dataType: "STRING",type:"DATA"},
-        barcode: { label: "barcode", value:doc.barcode, dataType: "STRING",type:"DATA"},
-        name: { label: "name", value:doc.name, dataType: "STRING",type:"DATA"},
-        category: { label: "category", value:doc.category.name, dataType: "STRING",type:"DATA"},
-        account: { label: "account", value:doc.account.number + ' : ' + doc.account.name , dataType: "STRING",type:"DATA"},
-        price:  {label: "price", value:doc.price, dataType: "CURRENCY",type:"DATA", locale: "US"},
+    var viewDocSnapshot =  {
+        type: doc.type._id,
+        barcode: doc.barcode,
+        name: doc.name,
+        category: doc.category._id,
+        maker: doc.maker._id,
+        model: doc.model._id,
+        condition:doc.condition._id,
+        chassisno:doc.chassisno,
+        engineno: doc.engineno,
+        color: doc.color,
+        horsepower: doc.horsepower,
+        year: doc.year,
+        description: doc.description, 
+        enable: doc.enable
     };
     return viewDocSnapshot;
 }
@@ -923,10 +903,9 @@ function createContactListItemViewData(docName, doc) {
     viewDocSnapshot.data  = {
         code: { label: "code", value:doc.type + '-' + doc.number, dataType: "STRING",type:"DATA"},
         name: { label: "name", value:doc.name, dataType: "STRING",type:"DATA"},
-        latinname: { label: "latinname", value:doc.latinname, dataType: "STRING",type:"DATA"},
         gender: { label: "gender", value:doc.gender, dataType: "RESOURCE_STRING",type:"DATA"},
-        nickname: { label: "nickname", value:doc.nickname, dataType: "STRING",type:"DATA"},
-        phoneNumber: { label: "phoneNumber", value:doc.phoneNumber, dataType: "STRING",type:"DATA"},
+        primaryNumber: { label: "primaryNumber", value:doc.primaryNumber, dataType: "STRING",type:"DATA"},
+        secondaryNumber: { label: "secondaryNumber", value:doc.secondaryNumber, dataType: "STRING",type:"DATA"},
         facebook: { label: "facebook", value:doc.facebook, dataType: "STRING",type:"DATA"},
         telegram: { label: "telegram", value:doc.telegram, dataType: "STRING",type:"DATA"},
         address: { label: "address", value:doc.address, dataType: "STRING",type:"DATA"}    
@@ -1193,12 +1172,11 @@ function createContactDocumentSnapshot(entity, model) {
     general.childrent.latinname = {label: "latin_name", value:model.latinname, dataType: "STRING",type:"DATA"};
     general.childrent.name = {label: "name", value:model.name, dataType: "STRING",type:"DATA"};
     general.childrent.gender = {label: "gender", value:model.gender, dataType: "STRING",type:"DATA"};
-    general.childrent.nickname = {label: "nick_name", value:model.nickname, dataType: "STRING",type:"DATA"};
-
+    
     var contactNumber = {label:"contactNumber", type: "GROUP", dataType: "GROUP", childrent: {}};
-    contactNumber.childrent.phoneNumber1 = {label: "primarynumber", value: model.phoneNumber1, dataType: "PHONENUMBER",type:"DATA"};
-    contactNumber.childrent.phoneNumber2 = {label: "secondarynumber", value: model.phoneNumber2, dataType: "PHONENUMBER",type:"DATA"};
-    contactNumber.childrent.phoneNumber3 = {label: "thridnumber", value: model.phoneNumber3, dataType: "PHONENUMBER",type:"DATA"};
+    contactNumber.childrent.primaryNumber = {label: "primaryNumber", value: model.primaryNumber, dataType: "PHONENUMBER",type:"DATA"};
+    contactNumber.childrent.secondarynumber = {label: "secondarynumber", value: model.secondarynumber, dataType: "PHONENUMBER",type:"DATA"};
+
     contactNumber.childrent.facebook =  {label: "facebook", value: model.facebook, dataType: "FACEBOOK",type:"DATA"};
     contactNumber.childrent.telegram = {label: "telegram", value: model.telegram, dataType: "TELEGRAM",type:"DATA"};
 
@@ -1272,10 +1250,9 @@ function createSaleDocumentSnapshot(entity, model) {
     customer.childrent.lastname = {label: "last_name", value:model.customer.lastname, dataType: "STRING",type:"DATA", visible: 8};
     customer.childrent.fullname = {label: "name", value:model.customer.lastname + ' ' + model.customer.firstname, dataType: "STRING",type:"DATA"};
 
-    customer.childrent.phoneNumber1 = {label: "primarynumber", value: model.customer.phoneNumber1, dataType: "PHONENUMBER",type:"DATA"};
-    customer.childrent.phoneNumber2 = {label: "secondarynumber", value: model.customer.phoneNumber2, dataType: "PHONENUMBER",type:"DATA"};
-    customer.childrent.phoneNumber3 = {label: "thridnumber", value: model.customer.phoneNumber3, dataType: "PHONENUMBER",type:"DATA"};
-
+    customer.childrent.primaryNumber = {label: "primaryNumber", value: model.customer.primaryNumber, dataType: "PHONENUMBER",type:"DATA"};
+    customer.childrent.secondaryNumber = {label: "secondaryNumber", value: model.customer.secondaryNumber, dataType: "PHONENUMBER",type:"DATA"};
+    
     deal.childrent.customer = customer;
 
     deal.childrent.item = {label: "item", value:model.item, dataType: "STRING",type:"DATA"};
@@ -1359,10 +1336,9 @@ function createLoanRequestDocumentSnapshot(entity, model) {
     customer.childrent.lastname = {label: "last_name", value:model.customer.lastname, dataType: "STRING",type:"DATA", visible: 8};
     customer.childrent.fullname = {label: "name", value:model.customer.lastname + ' ' + model.customer.firstname, dataType: "STRING",type:"DATA"};
 
-    customer.childrent.phoneNumber1 = {label: "primarynumber", value: model.customer.phoneNumber1, dataType: "PHONENUMBER",type:"DATA"};
-    customer.childrent.phoneNumber2 = {label: "secondarynumber", value: model.customer.phoneNumber2, dataType: "PHONENUMBER",type:"DATA"};
-    customer.childrent.phoneNumber3 = {label: "thridnumber", value: model.customer.phoneNumber3, dataType: "PHONENUMBER",type:"DATA"};
-
+    customer.childrent.primaryNumber = {label: "primaryNumber", value: model.customer.primaryNumber, dataType: "PHONENUMBER",type:"DATA"};
+    customer.childrent.secondaryNumber = {label: "secondaryNumber", value: model.customer.secondaryNumber, dataType: "PHONENUMBER",type:"DATA"};
+    
     deal.childrent.customer = customer;
 
     deal.childrent.item = {label: "item", value:model.item, dataType: "STRING",type:"DATA"};

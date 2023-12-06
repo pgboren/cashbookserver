@@ -12,44 +12,46 @@ const Loan = db.loan;
 const Vehicle = db.vehicle;
 
 module.exports = async function(app) {
-    var institute = createInstitutes();
+    
     var contacts = createContacts();
-    const account = await Account.findOne({ 'number': 102 }).exec();
-    const category = await Category.findOne({ 'key': 'MOTORBIKE' }).exec();
-    const maker = await db.maker.findOne({ 'key': 'HONDA_NCX' }).exec();
-    const type = await db.type.findOne({ 'key': 'OFF_ROAD' }).exec();
-    const newVehicle = await db.condition.findOne({ 'key': 'NEW' }).exec();
-    const secondhand = await db.condition.findOne({ 'key': 'SECONDHAND' }).exec();
-    const model = await  db.model.findOne({ 'key': 'SCOOPY_PRESTIGE' }).exec();
-    const color = await db.color.findOne({ 'name': 'ខ្មៅ' }).exec();
 
-    const vehicle = createVehicle('Honda Dream 125CC - 2023 - Black', account._id, category._id, maker._id, type._id, newVehicle._id, color._id, model._id, null);
-    const secondHandVehicle = createVehicle('Honda Dream 125CC - 2023 - Black', account._id, category._id, maker._id, type._id, secondhand._id, color._id, model._id, 'AR-2052');
+    // var institute = createInstitutes();
+    // const account = await Account.findOne({ 'number': 102 }).exec();
+    // const category = await Category.findOne({ 'key': 'MOTORBIKE' }).exec();
+    // const maker = await db.maker.findOne({ 'key': 'HONDA_NCX' }).exec();
+    // const type = await db.type.findOne({ 'key': 'OFF_ROAD' }).exec();
+    // const newVehicle = await db.condition.findOne({ 'key': 'NEW' }).exec();
+    // const secondhand = await db.condition.findOne({ 'key': 'SECONDHAND' }).exec();
+    // const model = await  db.model.findOne({ 'key': 'SCOOPY_PRESTIGE' }).exec();
+    // const color = await db.color.findOne({ 'name': 'ខ្មៅ' }).exec();
+
+    // const vehicle = createVehicle('Honda Dream 125CC - 2023 - Black', account._id, category._id, maker._id, type._id, newVehicle._id, color._id, model._id, null);
+    // const secondHandVehicle = createVehicle('Honda Dream 125CC - 2023 - Black', account._id, category._id, maker._id, type._id, secondhand._id, color._id, model._id, 'AR-2052');
 
 
-    const datetime = new Date();
-    var cashsaleInvoice = new Invoice();
-    cashsaleInvoice.date = datetime.getTime();
-    cashsaleInvoice.customer = contacts[0]._id;
-    cashsaleInvoice.vehicle = vehicle._id;
-    cashsaleInvoice.number = {};
-    cashsaleInvoice.number.prefix = 'INV';
-    cashsaleInvoice.paymentoption = 'CASH_PAY';
-    cashsaleInvoice.qty = 1;
-    cashsaleInvoice.price = 2350;
-    cashsaleInvoice.save();
+    // const datetime = new Date();
+    // var cashsaleInvoice = new Invoice();
+    // cashsaleInvoice.date = datetime.getTime();
+    // cashsaleInvoice.customer = contacts[0]._id;
+    // cashsaleInvoice.vehicle = vehicle._id;
+    // cashsaleInvoice.number = {};
+    // cashsaleInvoice.number.prefix = 'INV';
+    // cashsaleInvoice.paymentoption = 'CASH_PAY';
+    // cashsaleInvoice.qty = 1;
+    // cashsaleInvoice.price = 2350;
+    // cashsaleInvoice.save();
 
-    var loanSaleInvoice = new Invoice();
-    loanSaleInvoice.date = datetime.getTime();
-    loanSaleInvoice.customer = contacts[0]._id;
-    loanSaleInvoice.vehicle = secondHandVehicle._id;
-    loanSaleInvoice.institute = institute._id;
-    loanSaleInvoice.number = {};
-    loanSaleInvoice.number.prefix = 'INV';
-    loanSaleInvoice.paymentoption = 'LOAN';
-    loanSaleInvoice.qty = 1;
-    loanSaleInvoice.price = 2750;
-    loanSaleInvoice.save();   
+    // var loanSaleInvoice = new Invoice();
+    // loanSaleInvoice.date = datetime.getTime();
+    // loanSaleInvoice.customer = contacts[0]._id;
+    // loanSaleInvoice.vehicle = secondHandVehicle._id;
+    // loanSaleInvoice.institute = institute._id;
+    // loanSaleInvoice.number = {};
+    // loanSaleInvoice.number.prefix = 'INV';
+    // loanSaleInvoice.paymentoption = 'LOAN';
+    // loanSaleInvoice.qty = 1;
+    // loanSaleInvoice.price = 2750;
+    // loanSaleInvoice.save();   
 }
 
 function createContacts() {
@@ -60,8 +62,7 @@ function createContacts() {
             name: "សុខ ជិន",
             latinname: "Sok Chheng",
             gender: "MALE",
-            nickname: "សុខ",
-            phoneNumber: "1234567890",
+            primaryNumber: "1234567890",
             address: "ផ្ទះលេខ២៧០ ២៧៤ ផ្លូវកម្ពុជាក្រោម សង្កាត់មិត្តភាព ខណ្ឌ៧មករា រាជធានីភ្នំពេញ",
             facebook: "sokchheng",
             telegram: "https://t.me/borenpeng"
@@ -71,8 +72,7 @@ function createContacts() {
             name: "ណីតា សុខ",
             latinname: "Nita Sok",
             gender: "FEMALE",
-            nickname: "ណីតា",
-            phoneNumber: "9876543210",
+            primaryNumber: "9876543210",
             address: "ផ្ទះលេខ២៧០ ២៧៤ ផ្លូវកម្ពុជាក្រោម សង្កាត់មិត្តភាព ខណ្ឌ៧មករា រាជធានីភ្នំពេញ",
             facebook: "nitasok",
             telegram: "https://t.me/borenpeng"
@@ -82,8 +82,7 @@ function createContacts() {
             name: "សុភាសិត ជុម",
             latinname: "Sopheak Chea",
             gender: "MALE",
-            nickname: "សុភាសិត",
-            phoneNumber: "5551234567",
+            primaryNumber: "5551234567",
             address: "ផ្ទះលេខ២៧០ ២៧៤ ផ្លូវកម្ពុជាក្រោម សង្កាត់មិត្តភាព ខណ្ឌ៧មករា រាជធានីភ្នំពេញ",
             facebook: "https://t.me/borenpeng"
             },
@@ -92,8 +91,7 @@ function createContacts() {
             name: "ដាវី ម៉ៅ",
             latinname: "Davy Mao",
             gender: "FEMALE",
-            nickname: "ដាវី ",
-            phoneNumber: "9876543210",
+            primaryNumber: "9876543210",
             address: "ផ្ទះលេខ២៧០ ២៧៤ ផ្លូវកម្ពុជាក្រោម សង្កាត់មិត្តភាព ខណ្ឌ៧មករា រាជធានីភ្នំពេញ",
             facebook: "davymao",
             telegram: "https://t.me/borenpeng"
@@ -103,8 +101,7 @@ function createContacts() {
             name: "សុភាសិត កែវ",
             latinname: "Sophea Keo",
             gender: "MALE",
-            nickname: "សុភាសិត ",
-            phoneNumber: "555987654",
+            primaryNumber: "555987654",
             address: "ផ្ទះលេខ២៧០ ២៧៤ ផ្លូវកម្ពុជាក្រោម សង្កាត់មិត្តភាព ខណ្ឌ៧មករា រាជធានីភ្នំពេញ",
             facebook: "sopheakeo",
             telegram: "https://t.me/borenpeng"
@@ -114,13 +111,14 @@ function createContacts() {
             name: "ជីអិល ហ្វាយនែន ភីអិលស៊ី",
             latinname: "GL Finance PLC",
             gender: null,
-            phoneNumber: "0966060666",
+            primaryNumber: "0966060666",
             address: "ផ្ទះលេខ២៧០ ២៧៤ ផ្លូវកម្ពុជាក្រោម សង្កាត់មិត្តភាព ខណ្ឌ៧មករា រាជធានីភ្នំពេញ",
             facebook: "glfinancecambodia",
             telegram: "https://t.me/borenpeng"
             }                 
         ];
 
+    
         var contacts = [];
         for (let i = 0; i < contactdata.length; i++) {
             var contact = createContact(contactdata[i], i +1);
@@ -155,13 +153,13 @@ function createContact(data, index) {
     contact.name = data.name;
     contact.type = data.type;
     contact.latinname = data.latinname;
-    contact.nickname = data.nickname;
     contact.gender = data.gender;
-    contact.phoneNumber = "070433123";
+    contact.primaryNumber = "070433123";
     contact.facebook = "087987987";
     contact.telegram = "070433123";
     contact.address = "ភូមិទឹកថ្លា សង្កាត់ក្រាំងពង្រ ខណ្ឌដង្កោរ រាជធានីភ្នំពេញ";
     contact.save();
+    console.log(contact);
     return contact;
 }
 
