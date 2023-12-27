@@ -53,6 +53,7 @@ require('./routes/crud.routes')(app);
 require('./routes/view.routes')(app);
 require('./routes/auth.routes')(app);
 require('./routes/user.routes')(app);
+require('./routes/role.routes')(app);
 require('./routes/media.routes')(app);
 require('./routes/refdata.routes')(app);
 require('./routes/gazetteer.routes')(app);

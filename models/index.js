@@ -10,6 +10,7 @@ db.documentField = require("./documentField");
 
 db.user = require("./user");
 db.role = require("./role");
+
 db.user_access_token = require("./user_access_token");
 db.accounttype = require("./accounttype");
 db.account = require("./account");

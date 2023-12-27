@@ -10,7 +10,6 @@ module.exports = function(app) {
     app.get('/api/view/vehiclelable/:id',asyncHandler(view.generateVehicleLable));
     app.get('/api/view/nextcounter/:id',asyncHandler(view.nextcounter));
     app.get('/api/view/nextcounter/:id',asyncHandler(view.nextcounter));
-    app.get('/api/view/tutorials',asyncHandler(view.tutorialList));
 };
 
 

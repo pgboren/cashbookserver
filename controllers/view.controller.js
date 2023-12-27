@@ -27,15 +27,6 @@ var JsBarcode = require('jsbarcode');
 
 var viewType = new Enum({'LIST_VIEW': 'LIST_VIEW', 'LIST_ITEM_VIEW': 'LIST_ITEM_VIEW', 'DOC_VIEW': 'DOC_VIEW'});
 
-var tutorials = [];
-
-exports.tutorialList = function(req, res) {
-    tutorials.push({title: 'Tutorial 1',description: 'Tutorial 1',published: true});
-    tutorials.push({title: 'Tutorial 2',description: 'Tutorial 2',published: true});
-    tutorials.push({title: 'Tutorial 3',description: 'Tutorial 3',published: true});
-    res.status(200).json(tutorials);   
-}
-
 exports.getDocumentClass = async function (req, res) {
     try {
         var query = DocumentClass.findOne({ name:  req.params.docname});
@@ -428,7 +419,7 @@ exports.lookup = async function (req, res) {
         };
         const result = await docModel.paginate(filter, options);
         const docs = [];
-        result.docs.forEach(model => {
+            result.docs.forEach(model => {
             docs.push(model);
         });
 
@@ -583,22 +574,6 @@ function createDocViewData(docName, doc) {
     }
     
     return data;
-}
-
-function createNameViewData(docName, doc) {
-    var viewDocSnapshot = {};
-    viewDocSnapshot._id = doc.id;
-    viewDocSnapshot.docClassName = docName;
-    var photo = doc.photo ? doc.photo.path : null;
-    var general = {label:"general", dataType: "GROUP", type: "GROUP", editTable: false, viewType: null};     
-    general.childrent  = {
-        name: { label: "name", value:doc.name, dataType: "STRING",type:"DATA", viewType: 'TEXT'},
-        enable:  {label: "enable", value:doc.enable, dataType: "BOOLEAN",type:"DATA", viewType: 'BOOLEAN'},
-    };
-
-    viewDocSnapshot.data = {general: general};
-
-    return viewDocSnapshot;
 }
 
 function createNamePhotoViewData(docName, doc) {

@@ -3,6 +3,7 @@ const asyncHandler = require('express-async-handler')
 const { authJwt } = require("../middlewares");
 const multer  = require('multer');
 const path = require('path');
+const fileHelper = require('./../helper/fileHelper');
 
 const imageStorage = multer.diskStorage({
     destination: 'public/uploads/', 
@@ -16,10 +17,7 @@ const imageUpload = multer({
 	storage: imageStorage,
 	limits: {
 	  fileSize: 1000000
-	},
-	fileFilter(req, file, cb) {
-	 cb(undefined, true)
-  	}
+	}
 }) 
 
 module.exports = function(app) {

@@ -10,9 +10,11 @@ module.exports = function(app) {
     next();
   });
 
-  //app.post("/api/auth/signup", [verifySignUp.checkDuplicateUsernameOrEmail, verifySignUp.checkRolesExisted], controller.signup);
+  app.post("/api/auth/signup", [verifySignUp.checkDuplicateUsernameOrEmail, verifySignUp.checkRolesExisted], controller.signup);
   app.get("/api/auth/verify/:token", controller.verify);
   app.post("/api/auth/signin", controller.signin);
   app.post("/api/auth/signout", controller.signout);
   app.post("/api/auth/refresh", controller.refresh);
+  app.post("/api/auth/set_profile_picture", controller.set_profile_picture);
+  
 };

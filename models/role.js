@@ -1,10 +1,9 @@
 const mongoose = require("mongoose");
+const mongoosePaginate = require('mongoose-paginate-v2');
 
-const Role = mongoose.model(
-  "Role",
-  new mongoose.Schema({
-    name: String
-  })
-);
+var roleSchema = mongoose.Schema({
+  name: String
+});
 
-module.exports = Role;
+roleSchema.plugin(mongoosePaginate);
+var Role = module.exports = mongoose.model('role', roleSchema);

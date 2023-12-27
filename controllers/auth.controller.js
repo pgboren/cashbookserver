@@ -11,7 +11,6 @@ exports.signup = (req, res) => {
   const user = new User({
     username: req.body.username,
     email: req.body.email,
-    branch: req.body.branch,
     password: req.body.password
   });
 
@@ -157,9 +156,6 @@ exports.signin = (req, res) => {
       for (let i = 0; i < user.roles.length; i++) {
         authorities.push("ROLE_" + user.roles[i].name.toUpperCase());
       }
-
-      console.log(user);
-  
       var authData = {
         username: user.username,
         brach: user.branch,
@@ -185,4 +181,28 @@ exports.signout = async (req, res) => {
   UserAccessToken.findOneAndUpdate({ token: accessToken }, { active: false }, { upsert: true }).exec();
   UserAccessToken.findOneAndUpdate({ token: refreshToken }, { active: false }, { upsert: true }).exec();
   res.json({ message: 'Logout successful' });
+};
+
+exports.set_profile_picture = async (req, res) => {
+  try {
+    const user_id = req.body.user_id;
+    const user_picture = req.body.picture;
+
+    // Update the user's avatar
+    const updateResult = await User.updateOne({ _id: user_id }, { $set: { avatar: user_picture } });
+
+    if (updateResult.nModified === 0) {
+      // If no documents were modified, the user with the given _id was not found
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Fetch the updated user document
+    const updatedUser = await User.findById(user_id, { _id: 1, username: 1, avatar: 1 });
+
+    // Send the updated user in the response
+    res.status(200).json(updatedUser);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 };

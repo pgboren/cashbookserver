@@ -20,13 +20,12 @@ exports.upload = async (req, res) => {
         file = req.file;
         var media = null;
 		if (file != null) {
-			const { originalname, size, mimetype, path} = file;
+			const { filename, size, mimetype, path} = file;
 			var logicalPath = replaceAll(path, '\\', '/');
             logicalPath = replaceAll(logicalPath, 'public/', '');
-			var file_name = Date.now() +'_'+ originalname;
             const Media = mongoose.model("media");
 			media = await Media.create({
-				name: file_name,
+				name: filename,
 				size: size,
 				mimetype: mimetype,
 				path: logicalPath

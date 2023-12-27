@@ -11,6 +11,7 @@ verifyToken = (req, res, next) => {
   if (!token) {
     return res.status(403).send({ message: "No token provided!" });
   }
+
   UserAccessToken.findOne({ token: token }).exec()
   .then(userAccessToken => {
     if (userAccessToken.active) {
@@ -34,6 +35,7 @@ verifyToken = (req, res, next) => {
 };
 
 isAdmin = (req, res, next) => {
+
   User.findById(req.userId).exec((err, user) => {
     if (err) {
       res.status(500).send({ message: err });
@@ -57,7 +59,7 @@ isAdmin = (req, res, next) => {
           }
         }
 
-        res.status(403).send({ message: "Require Admin Role!" });
+        res.status(403).send({ message: "Unauthorized!" });
         return;
       }
     );
