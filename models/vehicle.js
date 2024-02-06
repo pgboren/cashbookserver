@@ -15,9 +15,11 @@ const vehicleSchema = mongoose.Schema({
     engineno: { type: String, required: false},
     horsepower: {type: String},
     year: {type:Number, require:true},
+    price: {type:Number, require:true},
     enable: {type:Boolean, required:true, default:true},
-    platenumber: {type: String}
-});
+    platenumber: {type: String},
+    deleted: { type: Boolean, default: false},
+}, { timestamps: true });
 
 vehicleSchema.plugin(mongoosePaginate);
 var vehicle = module.exports = mongoose.model('vehicle', vehicleSchema);

@@ -3,6 +3,7 @@ const asyncHandler = require('express-async-handler')
 const { authJwt } = require("../middlewares");
 
 module.exports = function(app) {
+    app.get("/api/view/:docname", [authJwt.verifyToken], view.all);
     app.get('/api/document/:docname', asyncHandler(view.getDocumentClass));
     app.post('/api/view/lookup/:docname', [authJwt.verifyToken], asyncHandler(view.lookup));
     app.post('/api/view/:viewName/:docname', asyncHandler(view.getViewData));

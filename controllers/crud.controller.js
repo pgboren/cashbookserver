@@ -7,7 +7,9 @@ const util = require('util');
 const fs = require("fs");
 const path = require('path');
 const mongoose = require('mongoose');
+const WebSocket = require('ws');
 const config = require('config');
+const { wss } = require('../index'); // Adjust the path as needed
 
 function replaceAll(str, find, replace) {
 	return str.replace(new RegExp(escapeRegExp(find), 'g'), replace);
@@ -45,8 +47,8 @@ exports.createDocWithFile = async (req, res) => {
         if (media != null) {
             model.photo = media;
         }
-
         const savedModel = await model.save();
+       
         return res.status(201).json({ id: savedModel._id });
 
     } catch (error) {
@@ -75,6 +77,13 @@ exports.createDoc = async (req, res) => {
         }
         const model = new Model(data);
         const savedModel = await model.save();
+        wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(`New ${entity} added!`);
+                console.log('Message is sent');
+            }
+        });
+
         return res.status(201).json({ id: savedModel._id });
 
     } catch (error) {
@@ -92,7 +101,7 @@ exports.createDoc = async (req, res) => {
     }
 };
 
-exports.getDoc = async (req, res) => {
+    exports.getDoc = async (req, res) => {
     const docName = req.params.entity;
     const id = req.params.id;
     const docClass = mongoose.model(docName);

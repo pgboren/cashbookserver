@@ -406,6 +406,10 @@ function createInvoicePdfFile(req, res, invoice) {
             doc.end();
 }
 
+exports.ref = async function (req, res) {
+
+}
+
 exports.lookup = async function (req, res) {
 
     const limit = parseInt(req.query.limit) || 10;
@@ -528,8 +532,12 @@ function getPopulateField(docName) {
 
     if (docName == 'account') {
         return ["type"];
-
     }
+
+    if (docName == 'user') {
+        return ["roles", "avatar"];
+    }
+
 
     if (docName == 'vehicle') {
         return ["account", "category", "specifications", "photo", "maker", "type", "condition", "model", "color"];
@@ -1436,3 +1444,258 @@ exports.getNewCouponNumber =async function (req, res, next) {
         next(e) 
     }
 }
+
+
+exports.all = async (req, res) => {
+    const docName = req.params.docname;
+    const docModel = mongoose.model(docName);
+    const deleted = req.query.deleted === 'true';
+    const limit = parseInt(req.query.limit) || 10;
+    const sortField = req.query.sort;
+    const order = req.query.order;
+    const page = parseInt(req.query.page) || 1;
+    const keyword = req.query.keyword;
+    const sort = {};
+    sort[sortField] = order === 'asc' ? 1 : -1;
+
+    const count_query = createCountQuery(docName, keyword, deleted);
+    
+    const countResult = await docModel.aggregate(count_query);
+
+    const totalCount = countResult.length > 0 ? countResult[0].total : 0;
+    const totalPages = Math.ceil(totalCount / limit);
+
+    const query = createDataQuery(docName, page, limit, keyword, deleted);
+    const results = await docModel.aggregate(query);
+    const formatedDocs = results.map(doc => (mapDoc(docName, doc)));
+      res.status(200).json({
+          docs: formatedDocs,
+          currentPage: page,
+          totalPages: totalPages,
+          totalItems: totalCount,
+      });
+    
+  };
+
+  function mapDoc(docname, doc) {
+     if (docname == 'user') {
+        return mapUser(doc);
+     }
+
+     if (docname == 'vehicle') {
+        return mapVehicle(doc);
+     }
+
+     if (docname == 'condition') {
+        return mapRef(doc);
+     }
+
+     if (docname == 'model') {
+        return mapRef(doc);
+     }
+
+     if (docname == 'color') {
+        return mapRef(doc);
+     }
+
+     if (docname == 'maker') {
+        return mapRef(doc);
+     }
+
+     return null;
+  }
+
+  function mapVehicle(doc) {
+    return {
+        _id: doc._id,
+        name: doc.name,
+        description: doc.description,
+        category: doc.category.name,
+        maker: doc.maker.name,
+        type: doc.type.name,
+        condition: doc.condition.name,
+        color: doc.color ? doc.color.name : null,
+        model: doc.model ? doc.model.name : null,
+        chassisno: doc.chassisno,
+        engineno: doc.engineno,
+        horsepower: doc.horsepower,
+        year: doc.year,
+        price: doc.price,
+        photo: doc.photo ? doc.photo.path : null,
+        deleted: doc.deleted,
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt
+      };
+  }
+
+  function mapRef(doc) {
+    return {
+        _id: doc._id,
+        name: doc.name
+      };    
+  }
+
+  function mapUser(user) {
+    return {
+        _id: user._id,
+        avatar: user.avatar ? user.avatar.path : null,
+        roles: user.roles , 
+        username: user.username,
+        email: user.email,
+        deleted: user.deleted,
+        deletable: user.deletable,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      };    
+  }
+
+  function mapDoc(docname, doc) {
+    
+    if (docname == 'vehicle') {
+       return mapVehicle(doc);
+    }
+
+    if (docname == 'user') {
+       return mapUser(doc);
+    }
+  }
+
+  function createSelectQuery(docName, keyword, isDeleted) {
+
+    if (docName == 'user') {
+        return [ 
+            {
+                $unwind: '$avatar'
+             },  
+             {
+                 $unwind: '$roles'
+             }, 
+            {
+                $lookup: {
+                    from: 'media', 
+                    localField: 'avatar',
+                    foreignField: '_id',
+                    as: 'avatar'
+                }   
+            }, 
+            {
+                $match: {
+                    $and: [
+                        { 'deleted': isDeleted}
+                    ]
+                }
+            }
+        ];
+    }
+
+    const numericKeyword = isNaN(keyword) ? keyword : parseFloat(keyword);
+
+    const query = [ 
+        {
+            $lookup: {
+                from: 'makers', 
+                localField: 'maker',
+                foreignField: '_id',
+                as: 'maker'
+            }
+        }, 
+        {
+            $lookup: {
+                from: 'types', 
+                localField: 'type',
+                foreignField: '_id',
+                as: 'type'
+            }
+        }, 
+        {
+            $lookup: {
+                from: 'conditions', 
+                localField: 'condition',
+                foreignField: '_id',
+                as: 'condition'
+            }
+        }, 
+        {
+            $lookup: {
+                from: 'models', 
+                localField: 'model',
+                foreignField: '_id',
+                as: 'model'
+            }
+        }, 
+        {
+            $lookup: {
+                from: 'media', 
+                localField: 'photo',
+                foreignField: '_id',
+                as: 'photo'
+            }
+        }, 
+        {
+            $lookup: {
+                from: 'colors', 
+                localField: 'color',
+                foreignField: '_id',
+                as: 'color'
+            }
+        }, 
+        
+        {
+            $match: {
+                $or: [
+                    { 'name': { $regex: new RegExp(keyword, 'i') }},
+                    { 'chassisno': { $regex: new RegExp(keyword, 'i') }},
+                    { 'engineno': { $regex: new RegExp(keyword, 'i') }},
+                    { 'horsepower': { $regex: new RegExp(keyword, 'i') }},
+                    { 'year': numericKeyword },
+                    { 'price': numericKeyword },
+                    { 'maker.0.name': { $regex: new RegExp(keyword, 'i') }},
+                    { 'type.0.name': { $regex: new RegExp(keyword, 'i') }},
+                    { 'condition.0.name': { $regex: new RegExp(keyword, 'i') }},
+                    { 'model.0.name': { $regex: new RegExp(keyword, 'i') }},
+                    { 'color.0.name': { $regex: new RegExp(keyword, 'i') }}
+                ],
+                $and: [
+                    { 'deleted': isDeleted}
+                ]
+            }
+        },
+        {
+            $unwind: '$maker'
+        },  
+        {
+            $unwind: '$type'
+        },  
+        {
+            $unwind: '$condition'
+        },  
+        {
+            $unwind: '$model'
+        },  
+        {
+            $unwind: '$color'
+        },  
+        {
+            $unwind: '$photo'
+        },  
+    ];
+    return query;
+  }
+
+  function createCountQuery(docName, keyword, isDeleted) {
+    const query = createSelectQuery(docName, keyword, isDeleted);
+    query.push( {
+            $group: {
+                _id: null,
+                total: { $sum: 1 }
+            }
+        });
+    return query;
+  }
+
+  function createDataQuery(docName, page, limit, keyword, isDeleted) {
+    const query = createSelectQuery(docName, keyword, isDeleted);
+    query.push({$skip: (page - 1) * limit});
+    query.push({ $limit: limit });
+    return query;
+  }
