@@ -4,7 +4,6 @@ import mongoosePaginate from 'mongoose-paginate-v2';
 
 import { Media, MediaModel } from './media.model';
 import { IUser } from './user.interface';
-import './role.model';
 
 export const userSchema = new Schema(
   {

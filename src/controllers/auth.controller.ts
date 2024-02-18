@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import {UserAccessTokenModel, IUserAccessToken} from '../models/user.accesstoken.model';
 import UserModel from '../models/user.model';
 import RoleModel from '../models/role.model';
+import { QueryWithHelpers } from 'mongoose';
 
 class AuthController {
 
@@ -185,11 +186,11 @@ class AuthController {
 
       // Update the user's avatar
       const updateResult = await UserModel.updateOne({ _id: user_id }, { $set: { avatar: user_picture } });
-
-      if (updateResult.nModified === 0) {
-        // If no documents were modified, the user with the given _id was not found
-        res.status(404).json({ error: 'User not found' });
-      }
+      
+      // if (updateResult.nModified === 0) {
+      //   // If no documents were modified, the user with the given _id was not found
+      //   res.status(404).json({ error: 'User not found' });
+      // }
 
       // Fetch the updated user document
       const updatedUser = await UserModel.findById(user_id, { _id: 1, username: 1, avatar: 1 });

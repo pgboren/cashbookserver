@@ -1,0 +1,13 @@
+{
+  "type": "mongodb",
+  "name": "default",
+	"host": "localhost",
+	"port": 27017,
+	"username": "boren",
+	"password": "boren",
+	"database": "cashbook",
+  "useNewUrlParser": true,
+  "entities": ["../src/entity/*.ts"],
+  "synchronize": true,
+  "logging": true
+}
