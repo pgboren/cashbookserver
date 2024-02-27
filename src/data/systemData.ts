@@ -27,20 +27,31 @@ class SystemData {
 		const adminRole = await RoleModel.create({ name: 'admin' });
 		console.log("added 'admin' to roles collection");
   
-		await RoleModel.create({ name: 'user' });
+		const userRole =await RoleModel.create({ name: 'user' });
 		console.log("added 'user' to roles collection");
-  
-		
+
 		if (adminRole) {
-			
 		  const adminUserData = {
 			username: process.env.USER_ADMIN_NAME,
 			email: process.env.USER_ADMIN_EMAIL,
 			password: process.env.USER_ADMIN_PASSWORD,
+			deletable: false,
 			roles: [adminRole._id],
 		  };
-  
 		  await UserModel.create(adminUserData);
+
+		  for (let i = 0; i < 10; i++) {
+			const userData = {
+			  username: 'user' + i,
+			  email: 'user' + i + '@gmail.com',
+			  password: '111111111',
+			  deletable: true,
+			  roles: [userRole._id],
+			};
+		
+			await UserModel.create(userData);
+		  }
+
 		  console.log("added 'admin' to users collection");
 		}
 	  } catch (err) {

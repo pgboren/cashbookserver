@@ -1,16 +1,8 @@
-import { Schema, Document, model } from 'mongoose';
+import { Document, Schema, model, PaginateModel, SchemaTypes, CallbackError } from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate-v2';
+import { IMedia } from './media.interface';
 
-interface Media extends Document {
-  name: string;
-  size: number;
-  mimetype: string;
-  created: Date;
-  updated?: Date;
-  path: string;
-}
-
-const mediaSchema = new Schema<Media>({
+const mediaSchema = new Schema({
   name: { type: String, required: true },
   size: { type: Number, required: true },
   mimetype: { type: String, required: true },
@@ -21,6 +13,7 @@ const mediaSchema = new Schema<Media>({
 
 mediaSchema.plugin(mongoosePaginate);
 
-const MediaModel = model<Media>('Media', mediaSchema);
 
-export { MediaModel, Media };
+const MediaModel: PaginateModel<IMedia> = model<IMedia>('Media', mediaSchema) as PaginateModel<IMedia>;
+
+export default MediaModel;

@@ -8,18 +8,21 @@ import mongoose from 'mongoose';
 import http from 'http';
 import "reflect-metadata"
 
-import userRoutes from './routes/user.routes';
 import authRoutes from './routes/auth.routes';
-import { AppDataSource } from "./data-source";
 import SystemData from "./data/systemData";
+
+import { ExpressAdapter } from '@nestjs/platform-express';
+
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from "./app.module";
 
 (async () => {
 
-    const WebSocket = require('ws');
+    const expressApp: Express = express();
+
     dotenv.config();
-    const app: Express = express();
-    const { API_PORT } = process.env;
     const port = process.env.API_PORT || 3000;
+    const { API_PORT } = process.env;
     const db_host = process.env.DATABASE_HOST;
     const db_port = process.env.DATABASE_PORT;
     const db_username = process.env.DATABASE_USER;
@@ -27,15 +30,10 @@ import SystemData from "./data/systemData";
     const db_name = process.env.DATABASE_NAME;
     const connnection_string = util.format('mongodb://%s:%s@%s:%d/%s', db_username, db_password, db_host, db_port, db_name);
 
-    const initPostgres = async () => {
-        await AppDataSource.initialize();
-        const systemData: SystemData = new SystemData();
-        systemData.initializeData();
-        console.log('Datasoruce is connected');
+    const init = async () => {
     };
 
-    try {
-        await initPostgres();
+    const setup_db_connection = async () => {
         mongoose.connect(connnection_string, { useNewUrlParser: true, useUnifiedTopology: true });
         const database: mongoose.Connection = mongoose.connection;
         if (!database) {
@@ -43,27 +41,32 @@ import SystemData from "./data/systemData";
         } else {
             console.log('Db connected successfully');
         }
+    };
 
-        app.use(cors());
-        app.use(bodyParser.urlencoded({
+    const checking_and_add_default_data = async () => {
+        const systemData: SystemData = new SystemData();
+        systemData.initializeData();
+        console.log('Datasoruce is connected');
+    };
+
+    try {
+        await init();
+        await setup_db_connection();
+        await checking_and_add_default_data();
+        
+        expressApp.use(cors());
+        expressApp.use(bodyParser.urlencoded({
             extended: true
         }));
-        app.use(bodyParser.json());
-        app.use(express.static('public'));
+        expressApp.use(bodyParser.json());
+        expressApp.use(express.static('public'));
 
-        const server: http.Server = http.createServer(app);
-        const wss = new WebSocket.Server({ server });
-        wss.on('connection', (socket: WebSocket) => {
-            console.log('WebSocket Client connected');
-            socket.send('Welcome to the WebSocket server!');
-        });
+        module.exports = { expressApp};
+        authRoutes(expressApp);
 
-        module.exports = { app, server, wss };
-        userRoutes(app);
-        authRoutes(app);
-        server.listen(port, function () {
-            console.log("Running RestHub on port " + port);
-        });
+        const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
+        await app.listen(port);
+
     } catch (error) {
         console.log('\x1b[31m%s\x1b[0m', `=> ❌  Server error: ${error}`);
     }

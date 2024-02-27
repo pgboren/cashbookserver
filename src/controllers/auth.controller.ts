@@ -124,7 +124,7 @@ class AuthController {
       const userAgent = req.headers['user-agent'];
       const user = await UserModel.findOne({
         username: req.body.username,
-      }).populate('roles');
+      }).select('+password').populate('roles');
 
       if (!user) {
         res.status(404).send({ message: 'User Not found.' });

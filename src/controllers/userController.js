@@ -151,8 +151,6 @@ class UserController extends BaseController {
     });
   };
 
-  
-
   markAsDeleted(req, res, next) {
     const userId = req.params.id;
     User.updateOne(

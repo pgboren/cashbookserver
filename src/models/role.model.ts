@@ -1,5 +1,5 @@
 // role.model.ts
-import { Document, Schema, model, PaginateModel, SchemaTypes, CallbackError } from 'mongoose';
+import { Schema, model } from 'mongoose';
 import { IRole } from './role.interface';
 
 const roleSchema = new Schema({

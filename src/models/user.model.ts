@@ -2,14 +2,37 @@ import bcrypt from 'bcryptjs';
 import { Document, Schema, model, PaginateModel, SchemaTypes, CallbackError } from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate-v2';
 
-import { Media, MediaModel } from './media.model';
 import { IUser } from './user.interface';
 
 export const userSchema = new Schema(
   {
-    username: String,
-    email: String,
-    password: String,
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      minlength: 3,
+      maxlength: 20
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+      validate: {
+        validator: (value: string) => {
+          // use a regex or a library to validate email format
+        },
+        message: 'Invalid email address'
+      }
+    },
+    password: {
+      type: String,
+      required: true,
+      minlength: 6,
+      select: false,
+    },
     deletable: { type: Boolean, default: true },
     avatar: { type: SchemaTypes.ObjectId, ref: 'Media' },
     roles: [

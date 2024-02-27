@@ -1,0 +1,5 @@
+class MediaService  {
+    
+}
+
+export { MediaService };
