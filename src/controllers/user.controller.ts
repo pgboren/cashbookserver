@@ -29,6 +29,7 @@ class UserController extends BaseController {
     user.email = data.email;
     user.password = data.password;
     user.roles = data.roles;
+    user.enable = data.enable;
     return user;
   }
    

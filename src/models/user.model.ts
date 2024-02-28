@@ -33,6 +33,7 @@ export const userSchema = new Schema(
       minlength: 6,
       select: false,
     },
+    enable: { type: Boolean, default: true },
     deletable: { type: Boolean, default: true },
     avatar: { type: SchemaTypes.ObjectId, ref: 'Media' },
     roles: [

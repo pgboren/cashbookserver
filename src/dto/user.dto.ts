@@ -23,4 +23,6 @@ export class UserCreateDto extends BaseDto {
   @IsNotEmpty()
   roles: string[];
 
+  enable: boolean;
+  
 }
