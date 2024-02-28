@@ -113,7 +113,6 @@ class AuthController {
     res.json({ message: 'Logout successful' });
   };
 
-
   async signin(req: Request, res: Response): Promise<void> {
     try {
       const secret: string = process.env.SECRET_KEY || '';
