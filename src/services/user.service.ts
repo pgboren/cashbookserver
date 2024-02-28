@@ -30,6 +30,24 @@ class UserService extends BaseService {
       return users.length > 0;
     }
 
+    public async checkUserNameExists(username: string, id: string | undefined): Promise<boolean> {
+
+      interface QueryType {
+        username: string;
+        deleted: boolean;
+        _id?: { $ne: string };
+      }
+
+      let query: QueryType = { username: username, deleted: false };
+
+      if (id) {
+        query._id = { $ne: id };
+      }
+      let users: IUser[] = await UserModel.find(query);
+      return users.length > 0;
+    }
+
+
     protected getModelDataFromRequest(param: any): any {
       return {
         username: param.username ,

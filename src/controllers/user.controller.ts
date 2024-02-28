@@ -23,6 +23,13 @@ class UserController extends BaseController {
     return { exist: emailExists};
   }
 
+  @Get('/check-username-exists')
+  public async checkUserNameExists(@Query('username') username: string, @Query('id') id?: string): Promise<any> {
+    let userService: UserService = this.service as UserService;
+    const emailExists = await userService.checkUserNameExists(username, id);
+    return { exist: emailExists};
+  }
+
   protected transformToDto(data: any): BaseDto {
     const user:UserCreateDto = new UserCreateDto();
     user.username = data.username;
