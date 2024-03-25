@@ -4,27 +4,9 @@ import { BaseDto } from './base.dto';
 import { UniqueUsernameValidator } from '../validator/UniqueUsernameValidator';
 import { UniqueUserEmailValidator } from '../validator/UniqueUserEmailValidator';
 
-export class UserCreateDto extends BaseDto {
-
-  @IsNotEmpty()
-  @IsString()
-  @Validate(UniqueUsernameValidator)
-  username: string;
-
-  @IsNotEmpty()
-  @IsEmail()
-  @Validate(UniqueUserEmailValidator)
-  email: string;
-
-  @IsNotEmpty()
-  @IsString()
-  password: string;
-
-  @IsNotEmpty()
-  roles: string[];
-
+export class ColorDto extends BaseDto {
+  name: string;
+  code: string;
   enable: boolean;
-
-  deletable: boolean;
-  
+  deleted: boolean;
 }

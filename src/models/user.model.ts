@@ -66,6 +66,7 @@ userSchema.pre<IUser>('save', async function (next) {
     const hashedPassword = await bcrypt.hash(user.password, salt);
 
     // Replace the plain password with the hashed one
+    user.deleted = false;
     user.password = hashedPassword;
     next();
   } catch (error: unknown) {

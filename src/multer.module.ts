@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
 import multer from 'multer';
 import path from 'path';
+import { existsSync, mkdirSync } from 'fs';
 
 @Module({
   imports: [
@@ -10,7 +11,21 @@ import path from 'path';
       dest: './public/uploads/', 
       storage: multer.diskStorage({
         destination: (req, file, cb) => {
-          cb(null, './public/uploads/');
+          const folder = req.query.folder;
+          const sub_folder = req.query.sub_folder;
+          console.log(folder);
+          console.log(!sub_folder);
+          let path =  './public/uploads/';
+          if  (folder) {
+            path  += `${folder}/`;
+            if  (sub_folder) {
+              path  += `${sub_folder}/`;
+            }
+          }
+          if (!existsSync(path)) {
+            mkdirSync(path, { recursive: true });
+          }
+          cb(null, path);
         },
         filename: (req, file, cb) => {
           const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);

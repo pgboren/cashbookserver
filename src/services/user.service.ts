@@ -2,16 +2,27 @@ import { Get, Post, Query, Injectable } from '@nestjs/common';
 import UserModel from '../models/user.model';
 import { BaseService } from './base.service';
 import { IUser } from '../models/user.interface';
+import { MediaUploadSupportServiceInterface } from './media/media.upload.suport.service.interface';
+import { IMedia } from '../models/media.interface';
 
 @Injectable()
-class UserService extends BaseService {
-
+class UserService extends BaseService implements MediaUploadSupportServiceInterface {
+  
     constructor() {
       super(UserModel);
     }
 
+    public async attachedUploadedMedia(attach_document_field: string, id: string, media: IMedia) {
+      const user: IUser | null = await UserModel.findById(id).populate(this.getPopulation());
+      if (!user) {
+        throw new Error('Document not found'); 
+      }
+      user.avatar = media;
+      user.save();
+    }
+
     protected getPopulation(): string[] {
-        return ['roles'];
+        return ['roles', 'avatar'];
     }
 
     public async checkEmailExists(email: string, id: string | undefined): Promise<boolean> {
@@ -64,6 +75,7 @@ class UserService extends BaseService {
         email: user.email,
         deleted: user.deleted,
         deletable: user.deletable,
+        
         roles: user.roles
       }));
     }

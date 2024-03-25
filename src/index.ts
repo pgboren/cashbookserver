@@ -2,19 +2,17 @@ import express, { Express, Request, Response } from "express";
 import cors from 'cors';
 import util from 'util';
 import dotenv from "dotenv";
-import path from 'path';
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
-import http from 'http';
 import "reflect-metadata"
-
 import authRoutes from './routes/auth.routes';
 import SystemData from "./data/systemData";
-
 import { ExpressAdapter } from '@nestjs/platform-express';
-
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from "./app.module";
+
+const fs = require('fs');
+const https = require('https');
 
 (async () => {
 
@@ -29,6 +27,11 @@ import { AppModule } from "./app.module";
     const db_password = process.env.DATABASE_PASSWORD;
     const db_name = process.env.DATABASE_NAME;
     const connnection_string = util.format('mongodb://%s:%s@%s:%d/%s', db_username, db_password, db_host, db_port, db_name);
+
+    const options = {
+        key: fs.readFileSync('./key/key.pem'),
+        cert: fs.readFileSync('./key/cert.pem')
+      };
 
     const init = async () => {
     };
@@ -64,8 +67,15 @@ import { AppModule } from "./app.module";
         module.exports = { expressApp};
         authRoutes(expressApp);
 
+
+    
         const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
-        await app.listen(port);
+        await app.init();
+
+        // Create HTTPS server with Express app
+        https.createServer(options, expressApp).listen(port, () => {
+            console.log(`Server running on port ${port}`);
+        });
 
     } catch (error) {
         console.log('\x1b[31m%s\x1b[0m', `=> ❌  Server error: ${error}`);

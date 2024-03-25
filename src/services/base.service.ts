@@ -1,7 +1,7 @@
-import { Query, ConflictException } from '@nestjs/common';
-import UserModel from '../models/user.model';
-import { PaginateModel, Model } from 'mongoose';
-import { MongoError } from 'mongodb';
+import { Query, ConflictException, HttpException, HttpStatus } from '@nestjs/common';
+import { PaginateModel, Model, model } from 'mongoose';
+import { IColor } from '../models/color.interface';
+import "reflect-metadata"
 
 abstract class BaseService {
 
@@ -12,6 +12,7 @@ abstract class BaseService {
     }
 
     protected formatDocs(docs: any[]): any[] {
+    
         return docs;    
     }
 
@@ -32,9 +33,21 @@ abstract class BaseService {
     }
 
     async update(id: string, data: any) : Promise<Document> {
-      let updateDoc = await this.Model.findOneAndUpdate({ _id: id}, data, {
-        new: true
-      });
+
+      const existingDoc = await this.get(id);
+      if (!existingDoc) {
+        throw new Error('Document not found');
+      }
+
+     if ('deleted' in existingDoc) {
+      const isDeleted: boolean = Reflect.get(existingDoc, 'deleted') as boolean;
+      if (isDeleted) {
+        throw new HttpException('Cannot update this object that has been marked as deleted.', HttpStatus.FORBIDDEN);
+      }
+     }
+    
+     const updateData = { $set: data };
+      let updateDoc: Document = await this.Model.findOneAndUpdate({ _id: id}, updateData, {new: true});
       return updateDoc;
     }
 
@@ -51,9 +64,11 @@ abstract class BaseService {
               collation: {
                 locale: 'en',
               },
-              populate: 'roles',
+              populate: this.getPopulation(),
               sort: {}
             };
+
+            
 
             if (query.sort && query.order) {
               const sortOrder = query.order.toLowerCase() === 'desc' ? -1 : 1;
@@ -63,7 +78,7 @@ abstract class BaseService {
             const result = await (this.Model as PaginateModel<any>).paginate({}, options);
             const formattedDocs:any[] = this.formatDocs(result.docs);
             return {
-              docs: formattedDocs,
+              docs: result.docs,
               totalItems: result.totalDocs,
               limit: result.limit,
               currentPage: result.page,

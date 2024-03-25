@@ -1,7 +1,7 @@
 import { PaginateModel } from 'mongoose';
 import { Get, Body, Delete, Param,Put, Patch, Post, Req, Query, UseInterceptors, BadRequestException, HttpStatus, HttpException  } from '@nestjs/common';
 import { BaseService } from '../services/base.service';
-import { FileUploadService } from '../services/file.upload.service';
+import { MediaUploadService } from '../services/media/media.upload.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { BaseDto } from '../dto/base.dto';
 import { UserCreateDto } from '../dto/user.dto';
@@ -9,10 +9,12 @@ import { ValidationPipe, UsePipes } from '@nestjs/common';
 import { validate, ValidationError } from 'class-validator';
 import { DtoValidationError } from '../dto/validation.error';
 
-
 abstract class BaseController  {
 
-  constructor(protected readonly service: BaseService, private readonly fileUploadService: FileUploadService) {
+  protected readonly service: BaseService;
+
+  constructor(serviceInstance: BaseService) {
+    this.service = serviceInstance;
   }
 
   protected abstract transformToDto(data: any): BaseDto;
@@ -38,6 +40,7 @@ abstract class BaseController  {
       const userDto: BaseDto = this.transformToDto(data);
       return await this.service.update(id, userDto);
     } catch (error) {
+      
       throw error;
     }
   }
@@ -45,6 +48,7 @@ abstract class BaseController  {
   @Put(':id')
   public async put(@Param('id') id: string, @Body() data: any): Promise<any> {
     try {
+      console.log(data);
       const dto: BaseDto = this.transformToDto(data);
       dto._id = id;
       await this.validateDto(dto);
@@ -91,21 +95,3 @@ abstract class BaseController  {
 }
 
 export { BaseController };
-
-
-
-// @Post()
-  // @UseInterceptors(FileInterceptor('file'))
-  // public async post(@UploadedFile() file: Express.Multer.File, @Body() data: any): Promise<any> {
-  //   try {
-  //     const userDto: BaseDto = this.transformToDto(data);
-  //     await this.validateDto(userDto);
-  //     // if (file != null) {
-  //     //   await this.fileUploadService.uploadFile(file);
-  //     // }
-  //     return await this.service.create(userDto);
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
-  

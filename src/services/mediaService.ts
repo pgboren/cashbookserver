@@ -1,5 +1,0 @@
-class MediaService  {
-    
-}
-
-export { MediaService };
