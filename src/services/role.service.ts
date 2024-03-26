@@ -27,7 +27,7 @@ class RoleService extends BaseService {
 
     async findAll(@Query() query: any): Promise<any> {
       try {
-          const docs = await this.Model.find({});
+          const docs = await this.model.find({});
           return {
             docs: docs
           };

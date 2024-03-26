@@ -1,14 +1,13 @@
-import { Query, ConflictException, HttpException, HttpStatus } from '@nestjs/common';
-import { PaginateModel, Model, model } from 'mongoose';
-import { IColor } from '../models/color.interface';
+import { Query, HttpException, HttpStatus } from '@nestjs/common';
+import { PaginateModel, Model } from 'mongoose';
 import "reflect-metadata"
 
 abstract class BaseService {
 
-    protected Model: Model<any>;
+    protected model: Model<any>;
   
     constructor(model: Model<any>) {
-        this.Model = model;
+        this.model = model;
     }
 
     protected formatDocs(docs: any[]): any[] {
@@ -21,7 +20,7 @@ abstract class BaseService {
     protected abstract getPopulation(): string[];
 
     async get(id: string): Promise<Document> {
-      const doc = await this.Model.findById(id).populate(this.getPopulation());
+      const doc = await this.model.findById(id).populate(this.getPopulation());
       if (!doc) {
         throw new Error('Document not found'); 
       }
@@ -29,7 +28,7 @@ abstract class BaseService {
     }
 
     async remove(id: string) : Promise<void> {
-       await this.Model.remove({ _id: id});
+       await this.model.remove({ _id: id});
     }
 
     async update(id: string, data: any) : Promise<Document> {
@@ -47,12 +46,12 @@ abstract class BaseService {
      }
     
      const updateData = { $set: data };
-      let updateDoc: Document = await this.Model.findOneAndUpdate({ _id: id}, updateData, {new: true});
+      let updateDoc: Document = await this.model.findOneAndUpdate({ _id: id}, updateData, {new: true});
       return updateDoc;
     }
 
     async create(param: any): Promise<Document> {
-      const createdDoc = await this.Model.create(param);
+      const createdDoc = await this.model.create(param);
       return createdDoc;
     }
 
@@ -75,7 +74,7 @@ abstract class BaseService {
               options.sort = { [query.sort]: sortOrder };
             }
 
-            const result = await (this.Model as PaginateModel<any>).paginate({}, options);
+            const result = await (this.model as PaginateModel<any>).paginate({}, options);
             const formattedDocs:any[] = this.formatDocs(result.docs);
             return {
               docs: result.docs,
